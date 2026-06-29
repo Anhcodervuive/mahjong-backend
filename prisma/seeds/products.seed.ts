@@ -109,39 +109,27 @@ export async function seedProducts(prisma: PrismaClient) {
     }
   });
 
-  // 4. Taiwanese Mahjong
-  const taiwanese = await prisma.game.create({
-    data: {
-      name: 'Taiwanese Mahjong',
-      description: 'The distinctive 16-tile Mahjong variant.',
-      categories: {
-        create: [
-          {
-            name: 'Training Levels',
-            description: 'Structured training levels for Taiwanese Mahjong.',
-            sessions: {
-              create: [
-                { title: 'Level 1: 16-Tile Foundation', pricePerPerson: 50, duration: 120, minPlayers: 1, maxPlayers: 4 },
-                { title: 'Level 2: Special Tai Scoring', pricePerPerson: 55, duration: 120, minPlayers: 1, maxPlayers: 4 },
-                { title: 'Level 3: Extra Tile Strategy', pricePerPerson: 60, duration: 120, minPlayers: 1, maxPlayers: 4 },
-                { title: 'Level 4: Competitive Taiwanese Play', pricePerPerson: 65, duration: 120, minPlayers: 1, maxPlayers: 4 },
-              ]
-            }
-          },
-          {
-            name: 'Guided Games',
-            description: 'Practical play sessions with guidance.',
-            sessions: {
-              create: [
-                { title: '2-Game Session', pricePerPerson: 40, duration: 60, minPlayers: 1, maxPlayers: 4 },
-                { title: '4-Game Session', pricePerPerson: 75, duration: 120, minPlayers: 1, maxPlayers: 4 },
-              ]
-            }
-          }
-        ]
-      }
-    }
+  // 5. Age Groups
+  const ageGroups = [
+    "10–17 years (accompanied by an adult)",
+    "Young Adults (18–29)",
+    "30–40 years",
+    "40–50 years",
+    "50–60 years",
+    "60 and above",
+  ];
+  for (const name of ageGroups) {
+    await prisma.ageGroup.create({ data: { name } });
+  }
+
+  // 6. Service Options (Experience)
+  await prisma.serviceOption.createMany({
+    data: [
+      { name: "Regular", description: "Standard booking", price: 0 },
+      { name: "Play at your convenience", description: "Flexible timing", price: 100 },
+      { name: "Travelling Tutor", description: "Tutor travels to your location", price: 100 }
+    ]
   });
 
-  console.log('Finished seeding Games, Categories, and Sessions.');
+  console.log('Finished seeding Games, Categories, Sessions, Age Groups, and Service Options.');
 }

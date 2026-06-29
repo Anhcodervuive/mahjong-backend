@@ -15,6 +15,8 @@ import { join } from 'path';
 import { GamesModule } from './games/games.module';
 import { CategoriesModule } from './categories/categories.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { AgeGroupsModule } from './age-groups/age-groups.module';
+import { ServiceOptionsModule } from './service-options/service-options.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { SessionsModule } from './sessions/sessions.module';
     GamesModule,
     CategoriesModule,
     SessionsModule,
+    AgeGroupsModule,
+    ServiceOptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

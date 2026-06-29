@@ -83,7 +83,7 @@ model SessionCategory {
   name        String    // e.g., Levels, Guided Play
   description String?
   
-  game        Game      @relation(fields: [gameId], references: [id])
+  game        Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
   sessions    Session[]
   
   createdAt   DateTime  @default(now())
@@ -105,11 +105,10 @@ model Session {
   maxPlayers     Int
   
   // Relations
-  category       SessionCategory @relation(fields: [categoryId], references: [id])
-  parent         Session?        @relation("SessionToSession", fields: [parentId], references: [id])
+  category       SessionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  parent         Session?        @relation("SessionToSession", fields: [parentId], references: [id], onDelete: Cascade)
   children       Session[]       @relation("SessionToSession")
   
-  serviceOptions SessionServicePricing[]
   bookings       Booking[]
   
   createdAt      DateTime  @default(now())
@@ -123,24 +122,12 @@ model ServiceOption {
   id          Int       @id @default(autoincrement())
   name        String    // e.g., Regular, Premium
   description String?
+  price       Decimal   @db.Decimal(10, 2) @default(0)
   
-  sessionPricing SessionServicePricing[]
   bookings       Booking[]
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-}
-
-model SessionServicePricing {
-  id              Int           @id @default(autoincrement())
-  sessionId       Int
-  serviceOptionId Int
-  price           Decimal       @db.Decimal(10, 2) 
-  
-  session         Session       @relation(fields: [sessionId], references: [id])
-  serviceOption   ServiceOption @relation(fields: [serviceOptionId], references: [id])
-
-  @@unique([sessionId, serviceOptionId])
 }
 
 // ------------------------------------------------------
@@ -181,6 +168,9 @@ model AgeGroup {
   id           Int           @id @default(autoincrement())
   name         String        
   participants Participant[]
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 enum BookingStatus {
