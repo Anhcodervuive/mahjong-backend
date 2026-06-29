@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { seedHomePage } from './seeds/home.seed';
 import { seedAboutPage } from './seeds/about.seed';
 import { seedReceivePage } from './seeds/receive.seed';
+import { seedProducts } from './seeds/products.seed';
 
 const prisma = new PrismaClient();
 
@@ -34,6 +35,9 @@ async function main() {
   await seedHomePage(prisma);
   await seedAboutPage(prisma);
   await seedReceivePage(prisma);
+
+  // Seed Products (Games, Categories, Sessions)
+  await seedProducts(prisma);
 }
 
 main()

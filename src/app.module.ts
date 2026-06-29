@@ -12,6 +12,10 @@ import { MediaModule } from './media/media.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
+import { GamesModule } from './games/games.module';
+import { CategoriesModule } from './categories/categories.module';
+import { SessionsModule } from './sessions/sessions.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,7 +30,10 @@ import { join } from 'path';
     UsersModule,
     AuthModule,
     CmsModule,
-    MediaModule
+    MediaModule,
+    GamesModule,
+    CategoriesModule,
+    SessionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
