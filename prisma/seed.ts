@@ -1,9 +1,14 @@
 import { PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
+import { seedHomePage } from './seeds/home.seed';
+import { seedAboutPage } from './seeds/about.seed';
+import { seedReceivePage } from './seeds/receive.seed';
+
 const prisma = new PrismaClient();
 
 async function main() {
+  // Admin user
   const adminEmail = 'admin@example.com';
   const existingAdmin = await prisma.user.findUnique({
     where: { email: adminEmail },
@@ -11,18 +16,24 @@ async function main() {
 
   if (!existingAdmin) {
     const hashedPassword = await bcrypt.hash('admin123', 10);
-    const admin = await prisma.user.create({
+    await prisma.user.create({
       data: {
         email: adminEmail,
         password: hashedPassword,
         name: 'Super Admin',
-        role: Role.ADMIN,
+        role: 'ADMIN' as Role,
       },
     });
-    console.log(`Admin created with email: ${admin.email}`);
+    console.log('Admin user seeded.');
   } else {
     console.log('Admin already exists.');
   }
+
+  // Seed CMS pages
+  console.log('Seeding CMS data...');
+  await seedHomePage(prisma);
+  await seedAboutPage(prisma);
+  await seedReceivePage(prisma);
 }
 
 main()

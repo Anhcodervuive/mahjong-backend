@@ -18,7 +18,7 @@ yarn-error.log*
 .nest/
 
 # Media Uploads (for CMS)
-/uploads
+# /uploads (Removed so that clone retains seed images)
 
 # Prisma
 /generated/prisma

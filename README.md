@@ -1,91 +1,104 @@
-# Mahjong Booking Website - Backend API
+# Mahjong Success - Project Installation Guide
 
-This is the backend for the Mahjong booking platform, built with **NestJS**, **Prisma ORM**, and **PostgreSQL**.
+This guide provides step-by-step instructions for installing and running the Mahjong Success platform (both Frontend and Backend).
 
-## 📌 Prerequisites
+## Prerequisites
 
-Before you begin, ensure you have met the following requirements:
-* **Node.js**: `v20` or higher recommended.
-* **npm**: Node package manager.
-* **Docker & Docker Compose**: Required for running the local PostgreSQL database.
+- **Node.js**: v18 or newer
+- **npm** or **yarn**
+- **Docker** and **Docker Compose** (if running via Docker)
+- **PostgreSQL** (if running locally without Docker)
 
 ---
 
-## 🚀 Getting Started (Run from A-Z)
+## 🚀 Scenario 1: Running with Docker (Recommended)
 
-Follow these instructions to get the project up and running on your local machine.
+This method sets up the database, backend, and frontend automatically using Docker.
 
-### 1. Installation
-Clone the repository (if applicable) and install the dependencies:
-```bash
-npm install
-```
+1. **Clone the repositories**:
+   Ensure you have both the frontend and backend in the same parent directory if you use a unified docker-compose, or just run them separately. Assuming you run them locally:
 
-### 2. Environment Setup
-Create a `.env` file in the root directory if it doesn't already exist. You can copy the `.env.example` if available.
-The file should look like this:
-
-```env
-# Database configuration (Matches the docker-compose settings)
-DATABASE_URL="postgresql://admin:admin_password@localhost:5433/booking_db?schema=public"
-
-# JWT Secret for Authentication (Change this in production)
-JWT_SECRET="super-secret-booking-key"
-
-# Application Port
-PORT=3000
-```
-
-### 3. Database Setup (Docker + Prisma)
-We use Docker to easily manage our PostgreSQL instance.
-1. Start the database container in the background:
+2. **Backend Setup (Docker for DB)**:
+   Navigate to the backend directory:
    ```bash
-   docker compose up -d
+   cd booking-website-backend
    ```
-2. Wait a few seconds for the database to fully initialize.
-3. Push the Prisma schema to the database (this creates the tables):
+   Start the PostgreSQL database via Docker:
    ```bash
+   docker-compose up -d
+   ```
+   Copy the environment variables and update if necessary:
+   ```bash
+   cp .env.example .env
+   ```
+   Install dependencies, generate Prisma client, and seed the database (this will load CMS default data):
+   ```bash
+   npm install
+   npx prisma generate
    npx prisma db push
-   ```
-4. Seed the database with the initial Admin account:
-   ```bash
    npx prisma db seed
    ```
+   Start the backend server:
+   ```bash
+   npm run start:dev
+   ```
 
-### 4. Running the Application
-Once the database is ready, you can start the NestJS server.
-
-```bash
-# development mode
-npm run start
-
-# watch mode (Recommended for development - auto restarts on save)
-npm run start:dev
-
-# production mode
-npm run start:prod
-```
-The server should now be running at `http://localhost:3000`.
-
----
-
-## 🔑 Default Credentials (Seeder)
-
-After running the seed script, an initial Admin account is created automatically so you can test the APIs.
-
-* **Email**: `admin@example.com`
-* **Password**: `admin123`
-* **Role**: `ADMIN`
-
-To authenticate, send a `POST` request to `http://localhost:3000/auth/login` with the above credentials in the JSON body. You will receive an `access_token` to use in subsequent requests as a Bearer Token.
+3. **Frontend Setup**:
+   Open a new terminal and navigate to the frontend directory:
+   ```bash
+   cd mahjong-frontend/mahjong-frontend
+   ```
+   Install dependencies:
+   ```bash
+   npm install
+   ```
+   Copy environment variables:
+   ```bash
+   cp .env.example .env
+   # Make sure VITE_API_URL points to the backend (e.g. http://localhost:4000)
+   ```
+   Start the frontend:
+   ```bash
+   npm run dev
+   ```
 
 ---
 
-## 📦 Prisma Studio (Database GUI)
+## 💻 Scenario 2: Running Locally without Docker
 
-If you want to view or edit the database records through a clean visual interface in your browser, you can use Prisma Studio:
+If you don't have Docker, you need to have a PostgreSQL instance running locally.
 
-```bash
-npx prisma studio
-```
-It will open automatically at `http://localhost:5555`.
+1. **Database Setup**:
+   - Create a PostgreSQL database named `mahjong_db`.
+   - Update the `.env` file in `booking-website-backend` to match your local database credentials:
+     ```env
+     DATABASE_URL="postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/mahjong_db?schema=public"
+     ```
+
+2. **Backend Setup**:
+   ```bash
+   cd booking-website-backend
+   npm install
+   npx prisma generate
+   npx prisma db push
+   npx prisma db seed
+   npm run start:dev
+   ```
+
+3. **Frontend Setup**:
+   ```bash
+   cd mahjong-frontend/mahjong-frontend
+   npm install
+   npm run dev
+   ```
+
+---
+
+## CMS Seeding & Default Admin
+
+When you run `npx prisma db seed`, the following happens:
+- A default admin is created: `admin@example.com` / `admin123`
+- Default content is populated for the **Home**, **About Mahjong**, and **What You Receive** pages.
+- The `uploads/` folder is included in version control so that default banner images are retained and displayed properly out-of-the-box.
+
+You can log in to the admin panel at `http://localhost:5174/admin` using the default credentials to access the CMS Hub and live preview features.
