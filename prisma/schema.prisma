@@ -8,7 +8,7 @@ datasource db {
 }
 
 // ------------------------------------------------------
-// 1. AUTHENTICATION & MEDIA
+// 1. AUTHENTICATION, MEDIA, AND CMS
 // ------------------------------------------------------
 enum Role {
   USER
@@ -35,16 +35,46 @@ model Media {
   createdAt    DateTime @default(now())
 }
 
+enum ContentType {
+  TEXT
+  HTML
+  IMAGE
+  JSON
+}
+
+model CmsPage {
+  id        Int          @id @default(autoincrement())
+  slug      String       @unique // e.g., "home", "about", "faq"
+  title     String       // E.g., "Trang chủ"
+  sections  CmsSection[]
+}
+
+model CmsSection {
+  id        Int         @id @default(autoincrement())
+  pageId    Int
+  key       String      // e.g., "hero_title", "journey_description"
+  type      ContentType 
+  value     String      @db.Text
+  
+  page      CmsPage     @relation(fields: [pageId], references: [id])
+  
+  @@unique([pageId, key])
+}
+
 // ------------------------------------------------------
 // 2. PRODUCT HIERARCHY
 // ------------------------------------------------------
 model Game {
-  id          Int               @id @default(autoincrement())
-  name        String            // e.g., International Goulash, American
-  description String?
-  categories  SessionCategory[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id           Int               @id @default(autoincrement())
+  name         String            // e.g., International Goulash, American
+  description  String?
+  coverImageId Int?              // Links to Media.id implicitly (no hard relation needed for simplicity)
+  iconImageId  Int?
+  
+  categories   SessionCategory[]
+  
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 }
 
 model SessionCategory {
@@ -52,8 +82,10 @@ model SessionCategory {
   gameId      Int
   name        String    // e.g., Levels, Guided Play
   description String?
+  
   game        Game      @relation(fields: [gameId], references: [id])
   sessions    Session[]
+  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -66,6 +98,7 @@ model Session {
   title          String
   subtitle       String?
   description    String?
+  thumbnailId    Int?      // Link to Media.id
   pricePerPerson Decimal   @db.Decimal(10, 2)
   duration       Int       // Duration in minutes
   minPlayers     Int       @default(1)
