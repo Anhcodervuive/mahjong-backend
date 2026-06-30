@@ -17,6 +17,9 @@ import { CategoriesModule } from './categories/categories.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { AgeGroupsModule } from './age-groups/age-groups.module';
 import { ServiceOptionsModule } from './service-options/service-options.module';
+import { WeeklySchedulesModule } from './weekly-schedules/weekly-schedules.module';
+import { DateOverridesModule } from './date-overrides/date-overrides.module';
+import { AvailabilityModule } from './availability/availability.module';
 
 @Module({
   imports: [
@@ -38,6 +41,9 @@ import { ServiceOptionsModule } from './service-options/service-options.module';
     SessionsModule,
     AgeGroupsModule,
     ServiceOptionsModule,
+    WeeklySchedulesModule,
+    DateOverridesModule,
+    AvailabilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

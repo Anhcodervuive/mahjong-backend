@@ -133,32 +133,31 @@ model ServiceOption {
 // ------------------------------------------------------
 // 4. CALENDAR & AVAILABILITY
 // ------------------------------------------------------
-model ScheduleDate {
-  id        Int        @id @default(autoincrement())
-  date      DateTime   @db.Date
-  isClosed  Boolean    @default(false)
-  
-  timeSlots TimeSlot[]
-  
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  
-  @@unique([date])
+model WeeklySchedule {
+  id           Int      @id @default(autoincrement())
+  dayOfWeek    Int      // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  startTime    String   // e.g., "10:00"
+  endTime      String   // e.g., "22:00"
+  capacity     Int      @default(4) // e.g., 4 tables
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([dayOfWeek, startTime, endTime])
 }
 
-model TimeSlot {
-  id             Int          @id @default(autoincrement())
-  scheduleDateId Int
-  startTime      DateTime     @db.Time
-  endTime        DateTime     @db.Time
-  capacity       Int          
-  bookedCount    Int          @default(0) 
-  
-  scheduleDate   ScheduleDate @relation(fields: [scheduleDateId], references: [id])
-  bookings       Booking[]
-  
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+model DateOverride {
+  id              Int      @id @default(autoincrement())
+  date            DateTime @db.Date
+  isClosed        Boolean  @default(false)
+  customStartTime String?  // e.g., "10:00"
+  customEndTime   String?  // e.g., "15:00"
+  customCapacity  Int?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([date])
 }
 
 // ------------------------------------------------------
@@ -182,8 +181,11 @@ enum BookingStatus {
 model Booking {
   id              Int           @id @default(autoincrement())
   sessionId       Int
-  timeSlotId      Int
   serviceOptionId Int
+
+  bookingDate     DateTime      @db.Date
+  startTime       String        // e.g. "10:00"
+  endTime         String        // e.g. "12:00"
   
   contactName     String
   contactEmail    String
@@ -196,7 +198,6 @@ model Booking {
   status          BookingStatus @default(PENDING)
   
   session         Session       @relation(fields: [sessionId], references: [id])
-  timeSlot        TimeSlot      @relation(fields: [timeSlotId], references: [id])
   serviceOption   ServiceOption @relation(fields: [serviceOptionId], references: [id])
   
   participants    Participant[]
