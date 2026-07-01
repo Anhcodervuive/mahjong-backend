@@ -238,6 +238,7 @@ model Payment {
   bookingId     Int           @unique
   provider      String        
   transactionId String?       @unique
+  paymentUrl    String?
   amount        Decimal       @db.Decimal(10, 2)
   currency      String        @default("AED")
   status        PaymentStatus @default(PENDING)

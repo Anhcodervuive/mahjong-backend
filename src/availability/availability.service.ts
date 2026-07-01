@@ -96,8 +96,8 @@ export class AvailabilityService {
           );
         });
 
-        // 1 table = 4 players typically, but capacity is just number of tables/slots available
-        const bookedCount = bookingsInSlot.length; 
+        // Capacity is based on number of players. Each booking takes `quantity` slots.
+        const bookedCount = bookingsInSlot.reduce((sum, b) => sum + (b.quantity || 1), 0); 
         const remaining = shift.capacity - bookedCount;
 
         totalCapacity += shift.capacity;

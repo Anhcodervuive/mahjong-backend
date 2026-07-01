@@ -24,4 +24,21 @@ export class UsersService {
       },
     });
   }
+
+  async getAllUsers(limit?: number, offset?: number) {
+    const total = await this.prisma.user.count();
+    const data = await this.prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit ? Number(limit) : undefined,
+      skip: offset ? Number(offset) : undefined,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      }
+    });
+    return { data, total };
+  }
 }

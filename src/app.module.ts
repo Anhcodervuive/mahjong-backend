@@ -20,6 +20,10 @@ import { ServiceOptionsModule } from './service-options/service-options.module';
 import { WeeklySchedulesModule } from './weekly-schedules/weekly-schedules.module';
 import { DateOverridesModule } from './date-overrides/date-overrides.module';
 import { AvailabilityModule } from './availability/availability.module';
+import { PaymentModule } from './payment/payment.module';
+import { BookingModule } from './booking/booking.module';
+
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -44,6 +48,9 @@ import { AvailabilityModule } from './availability/availability.module';
     WeeklySchedulesModule,
     DateOverridesModule,
     AvailabilityModule,
+    PaymentModule,
+    BookingModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
