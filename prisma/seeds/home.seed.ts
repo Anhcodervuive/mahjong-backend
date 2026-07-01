@@ -11,7 +11,7 @@ export async function seedHomePage(prisma: PrismaClient) {
 
   const sections = [
     // Hero Section
-    { key: 'hero_bg', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/hero-banner.jpg` },
+    { key: 'hero_bg', type: 'IMAGE' as ContentType, value: `/uploads/hero-banner.jpg` },
     { key: 'hero_title', type: 'TEXT' as ContentType, value: 'MAHJONG SUCCESS' },
     { key: 'hero_subtitle', type: 'TEXT' as ContentType, value: 'Master Mahjong one tile at a time.' },
     { key: 'hero_button', type: 'TEXT' as ContentType, value: 'Get Started' },
@@ -30,19 +30,19 @@ export async function seedHomePage(prisma: PrismaClient) {
     { key: 'variants_desc2', type: 'TEXT' as ContentType, value: 'At Mahjong Success, we introduce players to a variety of Mahjong formats, helping them understand the differences between each style while developing the skills and confidence to succeed in any game.' },
     
     // Variants Cards (Images and Text)
-    { key: 'variant_1_img', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/game-goulash.jpg` },
+    { key: 'variant_1_img', type: 'IMAGE' as ContentType, value: `/uploads/game-goulash.jpg` },
     { key: 'variant_1_title', type: 'TEXT' as ContentType, value: 'International Goulash' },
     { key: 'variant_1_desc', type: 'TEXT' as ContentType, value: 'Learn through a structured six-level journey covering foundations, Joker strategy, advanced hand building, partnership play, concealed hands, and scoring mastery.' },
 
-    { key: 'variant_2_img', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/game-american.jpg` },
+    { key: 'variant_2_img', type: 'IMAGE' as ContentType, value: `/uploads/game-american.jpg` },
     { key: 'variant_2_title', type: 'TEXT' as ContentType, value: 'American' },
     { key: 'variant_2_desc', type: 'TEXT' as ContentType, value: 'Master Charleston passing, Joker strategy, card-based gameplay, and winning hand development.' },
 
-    { key: 'variant_3_img', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/game-nml.jpg` },
+    { key: 'variant_3_img', type: 'IMAGE' as ContentType, value: `/uploads/game-nml.jpg` },
     { key: 'variant_3_title', type: 'TEXT' as ContentType, value: 'NMJL' },
     { key: 'variant_3_desc', type: 'TEXT' as ContentType, value: 'Play the official National Mahjong League card with its annually updated hands, strategic flexibility, and competitive standards.' },
 
-    { key: 'variant_4_img', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/game-taiwan.jpg` },
+    { key: 'variant_4_img', type: 'IMAGE' as ContentType, value: `/uploads/game-taiwan.jpg` },
     { key: 'variant_4_title', type: 'TEXT' as ContentType, value: 'Taiwanese' },
     { key: 'variant_4_desc', type: 'TEXT' as ContentType, value: 'Learn traditional Taiwanese Mahjong with sixteen-tile hands, strategic hand building, scoring, and advanced gameplay techniques.' },
 
@@ -58,15 +58,15 @@ export async function seedHomePage(prisma: PrismaClient) {
     { key: 'who_title', type: 'TEXT' as ContentType, value: 'A Seat for Everyone.' },
     { key: 'who_italic', type: 'TEXT' as ContentType, value: 'For Every Player. At Every Level.' },
     { key: 'who_desc', type: 'TEXT' as ContentType, value: 'Whether you\'re discovering Mahjong for the first time or looking to deepen your skills, Mahjong Success welcomes players from all backgrounds, age groups, and experience levels.' },
-    { key: 'who_img', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/seat-everyone.jpg` },
+    { key: 'who_img', type: 'IMAGE' as ContentType, value: `/uploads/seat-everyone.jpg` },
     { key: 'who_button', type: 'TEXT' as ContentType, value: 'Your Seat. Your Game. Your Mahjong Success.' },
 
     // What You Receive Section
     { key: 'receive_subtitle', type: 'TEXT' as ContentType, value: 'The Mahjong Success Experience' },
     { key: 'receive_title', type: 'TEXT' as ContentType, value: 'What You Receive at Each Training Level' },
     { key: 'receive_desc', type: 'TEXT' as ContentType, value: 'Every Mahjong Success training level is designed to provide a structured, engaging, and practical learning experience that combines instruction, strategy, and gameplay.' },
-    { key: 'receive_img1', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/receive-banner-1.jpg` },
-    { key: 'receive_img2', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/receive-banner-2.jpg` },
+    { key: 'receive_img1', type: 'IMAGE' as ContentType, value: `/uploads/receive-banner-1.jpg` },
+    { key: 'receive_img2', type: 'IMAGE' as ContentType, value: `/uploads/receive-banner-2.jpg` },
     { key: 'receive_button', type: 'TEXT' as ContentType, value: 'Learn. Play. Apply. Succeed.' },
 
     // Fast Track Bundles Section
@@ -74,7 +74,7 @@ export async function seedHomePage(prisma: PrismaClient) {
     { key: 'bundles_title', type: 'TEXT' as ContentType, value: 'Mahjong Success Fast Track Bundles' },
 
     // Premium Experiences Section
-    { key: 'premium_bg', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/premium-floral-bg.jpg` },
+    { key: 'premium_bg', type: 'IMAGE' as ContentType, value: `/uploads/premium-floral-bg.jpg` },
     { key: 'premium_subtitle', type: 'TEXT' as ContentType, value: 'Premium Mahjong Experiences' },
     { key: 'premium_title', type: 'TEXT' as ContentType, value: 'Your Venue. Your Schedule. Your Mahjong Success.' },
   ];

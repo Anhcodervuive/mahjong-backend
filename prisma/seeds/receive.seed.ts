@@ -16,8 +16,8 @@ export async function seedReceivePage(prisma: PrismaClient) {
     { key: 'hero_desc', type: 'TEXT' as ContentType, value: 'Every Mahjong Success training level is designed to provide a structured, engaging, and practical learning experience that combines instruction, strategy, and gameplay.' },
     
     // Content Section Banners
-    { key: 'banner_1', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/receive-banner-1.jpg` },
-    { key: 'banner_2', type: 'IMAGE' as ContentType, value: `${BACKEND_URL}/uploads/receive-banner-2.jpg` },
+    { key: 'banner_1', type: 'IMAGE' as ContentType, value: `/uploads/receive-banner-1.jpg` },
+    { key: 'banner_2', type: 'IMAGE' as ContentType, value: `/uploads/receive-banner-2.jpg` },
   ];
 
   for (const s of sections) {
