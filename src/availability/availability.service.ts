@@ -109,7 +109,7 @@ export class AvailabilityService {
         const endLabel = `${eh % 12 === 0 ? 12 : eh % 12}:00 ${eh >= 12 ? 'PM' : 'AM'}`;
 
         slots.push({
-          id: `${dateStr}-${slotStart}`,
+          id: `${dateStr}-${slotStart}-${slotEnd}`,
           label: `${startLabel} - ${endLabel}`,
           startTime: slotStart,
           endTime: slotEnd,
