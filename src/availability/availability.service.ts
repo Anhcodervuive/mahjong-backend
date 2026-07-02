@@ -22,13 +22,18 @@ export class AvailabilityService {
       },
     });
 
+    const fifteenMinsAgo = dayjs().subtract(15, 'minute').toDate();
+
     const bookings = await this.prisma.booking.findMany({
       where: {
         bookingDate: {
           gte: startDate.toDate(),
           lte: endDate.toDate(),
         },
-        status: { in: ['CONFIRMED', 'PENDING'] },
+        OR: [
+          { status: 'CONFIRMED' },
+          { status: 'PENDING', createdAt: { gte: fifteenMinsAgo } }
+        ]
       },
       include: { session: true },
     });
@@ -90,10 +95,11 @@ export class AvailabilityService {
         const slotEnd = shift.endTimeStr;
 
         const bookingsInSlot = bookings.filter((b) => {
-          return (
-            dayjs(b.bookingDate).format('YYYY-MM-DD') === dateStr &&
-            b.startTime === slotStart
-          );
+          if (dayjs(b.bookingDate).format('YYYY-MM-DD') !== dateStr) return false;
+          // Calculate overlap: max(start) < min(end)
+          const bStart = b.startTime;
+          const bEnd = b.endTime;
+          return bStart < slotEnd && bEnd > slotStart;
         });
 
         // Capacity is based on number of players. Each booking takes `quantity` slots.
