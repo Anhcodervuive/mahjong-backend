@@ -24,6 +24,7 @@ import { PaymentModule } from './payment/payment.module';
 import { BookingModule } from './booking/booking.module';
 
 import { DashboardModule } from './dashboard/dashboard.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     PaymentModule,
     BookingModule,
     DashboardModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

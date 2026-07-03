@@ -4,9 +4,10 @@ import { BookingController } from './booking.controller';
 
 import { PrismaModule } from '../prisma/prisma.module';
 import { PaymentModule } from '../payment/payment.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [PrismaModule, PaymentModule],
+  imports: [PrismaModule, PaymentModule, EmailModule],
   providers: [BookingService],
   controllers: [BookingController]
 })

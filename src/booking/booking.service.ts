@@ -1,6 +1,8 @@
 import { Injectable, InternalServerErrorException, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentService } from '../payment/payment.service';
+import { EmailService } from '../email/email.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class BookingService {
@@ -9,6 +11,7 @@ export class BookingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly paymentService: PaymentService,
+    private readonly emailService: EmailService,
   ) {}
 
   async createBooking(data: any): Promise<{ paymentUrl: string }> {
@@ -97,7 +100,7 @@ export class BookingService {
     try {
       const payment = await this.prisma.payment.findUnique({
         where: { transactionId: orderReference },
-        include: { booking: true },
+        include: { booking: { include: { session: true, participants: true } } },
       });
 
       if (!payment) throw new NotFoundException('Payment record not found');
@@ -117,6 +120,10 @@ export class BookingService {
           where: { id: payment.bookingId },
           data: { status: 'CONFIRMED' },
         });
+        // Asynchronously process user creation and send emails
+        this.processBookingUsers(payment.booking).catch(e => 
+          this.logger.error('Background user processing failed', e)
+        );
       }
 
       return {
@@ -128,6 +135,44 @@ export class BookingService {
       this.logger.error(`Failed to verify payment for ${orderReference}`, error);
       throw new InternalServerErrorException('Payment verification failed');
     }
+  }
+
+  private async processBookingUsers(booking: any) {
+    const participants = booking.participants || [];
+    
+    // Process all participants concurrently
+    await Promise.all(participants.map(async (p: any) => {
+      if (!p.email) return; // Skip if no email provided
+
+      let user = await this.prisma.user.findUnique({ where: { email: p.email } });
+      let isNewUser = false;
+      let plainPassword = '';
+
+      if (!user) {
+        // Create new user
+        plainPassword = Math.random().toString(36).slice(-8); // Random 8-char password
+        const hashedPassword = await bcrypt.hash(plainPassword, 10);
+        
+        user = await this.prisma.user.create({
+          data: {
+            email: p.email,
+            password: hashedPassword,
+            name: p.fullName || 'Guest',
+            role: 'USER',
+          }
+        });
+        isNewUser = true;
+      }
+
+      // Send email
+      await this.emailService.sendBookingConfirmation(
+        p.email,
+        user.name,
+        isNewUser,
+        plainPassword,
+        booking
+      );
+    }));
   }
 
   async getAllBookings(limit?: number, offset?: number, startDate?: string, endDate?: string) {
