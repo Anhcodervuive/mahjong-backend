@@ -126,7 +126,9 @@ export class AvailabilityService {
       slots.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
       let status = 'available';
-      if (usedCapacity >= totalCapacity && totalCapacity > 0) {
+      const hasAvailableSlots = slots.some((s) => s.remaining > 0);
+      
+      if (!hasAvailableSlots && slots.length > 0) {
         status = 'fully-booked';
       } else if (usedCapacity > 0) {
         status = 'filling-up';
