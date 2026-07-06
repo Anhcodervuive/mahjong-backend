@@ -77,6 +77,67 @@ export async function seedHomePage(prisma: PrismaClient) {
     { key: 'premium_bg', type: 'IMAGE' as ContentType, value: `/uploads/premium-floral-bg.jpg` },
     { key: 'premium_subtitle', type: 'TEXT' as ContentType, value: 'Premium Mahjong Experiences' },
     { key: 'premium_title', type: 'TEXT' as ContentType, value: 'Your Venue. Your Schedule. Your Mahjong Success.' },
+
+    // The Mahjong Success Difference
+    { key: 'diff_subtitle', type: 'TEXT' as ContentType, value: 'The Mahjong Success Difference' },
+    { key: 'diff_title', type: 'TEXT' as ContentType, value: 'What Defines Our Players' },
+    
+    { key: 'diff_1_title', type: 'TEXT' as ContentType, value: 'Well-Trained & Well-Prepared' },
+    { key: 'diff_1_desc', type: 'TEXT' as ContentType, value: 'They have a clear understanding of the games they have learned, including the rules, concepts, strategies, and gameplay instructions.' },
+    { key: 'diff_1_img', type: 'IMAGE' as ContentType, value: '/uploads/diff-1-well-trained.jpg' },
+    
+    { key: 'diff_2_title', type: 'TEXT' as ContentType, value: 'Strong Etiquette & Table Manners' },
+    { key: 'diff_2_desc', type: 'TEXT' as ContentType, value: 'They understand proper Mahjong etiquette, table conduct, sportsmanship, and respectful gameplay, contributing to a positive experience for everyone.' },
+    { key: 'diff_2_img', type: 'IMAGE' as ContentType, value: '/uploads/diff-2-etiquette.jpg' },
+
+    { key: 'diff_3_title', type: 'TEXT' as ContentType, value: 'Strong Knowledge of the Rules' },
+    { key: 'diff_3_desc', type: 'TEXT' as ContentType, value: 'They understand the game mechanics and play confidently without uncertainty or confusion.' },
+    { key: 'diff_3_img', type: 'IMAGE' as ContentType, value: '/uploads/diff-3-rules.jpg' },
+
+    { key: 'diff_4_title', type: 'TEXT' as ContentType, value: 'Deep Understanding of Tiles' },
+    { key: 'diff_4_desc', type: 'TEXT' as ContentType, value: 'They know the value, purpose, and strategic use of different tiles and how they contribute to winning hands.' },
+    { key: 'diff_4_img', type: 'IMAGE' as ContentType, value: '/uploads/diff-4-tiles.jpg' },
+
+    { key: 'diff_5_title', type: 'TEXT' as ContentType, value: 'Joker Strategy Experts' },
+    { key: 'diff_5_desc', type: 'TEXT' as ContentType, value: 'They understand joker rules, joker exchanges, joker optimisation, and how to maximise the value of jokers across different games.' },
+    { key: 'diff_5_img', type: 'IMAGE' as ContentType, value: '/uploads/diff-5-joker.jpg' },
+
+    { key: 'diff_6_title', type: 'TEXT' as ContentType, value: 'Strategic Thinkers' },
+    { key: 'diff_6_desc', type: 'TEXT' as ContentType, value: 'They think ahead, evaluate options, manage risks, and make informed decisions during gameplay.' },
+    { key: 'diff_6_img', type: 'IMAGE' as ContentType, value: '/uploads/diff-6-strategic.jpg' },
+
+    { key: 'diff_7_title', type: 'TEXT' as ContentType, value: 'Familiar with Multiple Variants' },
+    { key: 'diff_7_desc', type: 'TEXT' as ContentType, value: 'They are exposed to different Mahjong games and formats, making them adaptable and versatile players.' },
+    { key: 'diff_7_img', type: 'IMAGE' as ContentType, value: '/uploads/diff-7-variants.jpg' },
+
+    { key: 'diff_8_title', type: 'TEXT' as ContentType, value: 'Answers, Not Questions' },
+    { key: 'diff_8_desc', type: 'TEXT' as ContentType, value: 'Having completed structured training and FAQs, they spend less time asking basic questions and more time focusing on gameplay and strategy.' },
+    { key: 'diff_8_img', type: 'IMAGE' as ContentType, value: '/uploads/diff-8-answers.jpg' },
+
+    { key: 'diff_9_title', type: 'TEXT' as ContentType, value: 'Smooth & Efficient Gameplay' },
+    { key: 'diff_9_desc', type: 'TEXT' as ContentType, value: 'They understand game flow, avoid unnecessary delays, and help maintain an enjoyable pace of play.' },
+    { key: 'diff_9_img', type: 'IMAGE' as ContentType, value: '/uploads/diff-9-smooth.jpg' },
+
+    { key: 'diff_10_title', type: 'TEXT' as ContentType, value: 'Confidence Through Practice' },
+    { key: 'diff_10_desc', type: 'TEXT' as ContentType, value: 'Through guided games and practical play, they build confidence, speed, consistency, and real-game experience.' },
+    { key: 'diff_10_img', type: 'IMAGE' as ContentType, value: '/uploads/diff-10-confidence.jpg' },
+
+    // Mahjong Mania
+    { key: 'mahjong_mania_img', type: 'IMAGE' as ContentType, value: '/uploads/mahjong-mania.jpg' },
+    { key: 'mahjong_mania_tagline', type: 'TEXT' as ContentType, value: 'More Ways to Play' },
+    { key: 'mahjong_mania_title', type: 'TEXT' as ContentType, value: 'Mahjong Mania' },
+    { key: 'mahjong_mania_desc1', type: 'TEXT' as ContentType, value: 'Mahjong Mania brings the community together for dynamic, multi-table gameplay sessions that offer variety, excitement, and a fresh challenge every time you play.' },
+    { key: 'mahjong_mania_desc2', type: 'TEXT' as ContentType, value: 'Whether you prefer individual play, team-based strategies, or tournament formats, Mahjong Mania provides a vibrant, competitive, and social environment designed for players who love the game and enjoy testing their skills in different ways.' },
+    { key: 'mahjong_mania_btn', type: 'TEXT' as ContentType, value: 'Explore Mahjong Mania' },
+
+    // Thinking Table
+    { key: 'thinking_table_img', type: 'IMAGE' as ContentType, value: '/uploads/thinking-table.jpg' },
+    { key: 'thinking_table_tagline', type: 'TEXT' as ContentType, value: 'Corporate Learning & Development' },
+    { key: 'thinking_table_title', type: 'TEXT' as ContentType, value: 'The Thinking Table' },
+    { key: 'thinking_table_desc1', type: 'TEXT' as ContentType, value: 'The Thinking Table offers a unique and engaging corporate learning experience, using the strategic framework of Mahjong to develop critical thinking, decision making, risk management, and team collaboration.' },
+    { key: 'thinking_table_desc2', type: 'TEXT' as ContentType, value: 'Designed for professionals, teams, and organisations, this interactive workshop goes beyond traditional corporate training by immersing participants in a fast-paced, strategic game that mirrors real-world business challenges.' },
+    { key: 'thinking_table_desc3', type: 'TEXT' as ContentType, value: 'Enhance your team’s strategic capabilities through a highly interactive and intellectually stimulating experience.' },
+    { key: 'thinking_table_btn', type: 'TEXT' as ContentType, value: 'Discover The Thinking Table' },
   ];
 
   for (const sectionData of sections) {
