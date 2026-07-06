@@ -23,10 +23,10 @@ export class CmsService {
     });
   }
 
-  async updateSection(id: number, value: string) {
+  async updateSection(id: number, content: any) {
     return this.prisma.cmsSection.update({
       where: { id },
-      data: { value },
+      data: { content },
     });
   }
 }

@@ -22,8 +22,8 @@ export class CmsController {
   @Put('sections/:id')
   async updateSection(
     @Param('id') id: string,
-    @Body('value') value: string,
+    @Body('content') content: any,
   ) {
-    return this.cmsService.updateSection(parseInt(id, 10), value);
+    return this.cmsService.updateSection(parseInt(id, 10), content);
   }
 }

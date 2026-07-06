@@ -35,12 +35,7 @@ model Media {
   createdAt    DateTime @default(now())
 }
 
-enum ContentType {
-  TEXT
-  HTML
-  IMAGE
-  JSON
-}
+
 
 model CmsPage {
   id        Int          @id @default(autoincrement())
@@ -50,14 +45,14 @@ model CmsPage {
 }
 
 model CmsSection {
-  id        Int         @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   pageId    Int
-  key       String      // e.g., "hero_title", "journey_description"
-  type      ContentType 
-  value     String      @db.Text
-  
-  page      CmsPage     @relation(fields: [pageId], references: [id])
-  
+  key       String
+  name      String?
+  content   Json
+
+  page CmsPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
   @@unique([pageId, key])
 }
 
