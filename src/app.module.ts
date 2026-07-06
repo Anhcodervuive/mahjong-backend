@@ -25,6 +25,7 @@ import { BookingModule } from './booking/booking.module';
 
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
+import { Smtp2goModule } from './smtp2go/smtp2go.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { EmailModule } from './email/email.module';
     BookingModule,
     DashboardModule,
     EmailModule,
+    Smtp2goModule,
   ],
   controllers: [AppController],
   providers: [AppService],

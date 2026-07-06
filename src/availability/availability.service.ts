@@ -96,10 +96,7 @@ export class AvailabilityService {
 
         const bookingsInSlot = bookings.filter((b) => {
           if (dayjs(b.bookingDate).format('YYYY-MM-DD') !== dateStr) return false;
-          // Calculate overlap: max(start) < min(end)
-          const bStart = b.startTime;
-          const bEnd = b.endTime;
-          return bStart < slotEnd && bEnd > slotStart;
+          return b.startTime === slotStart && b.endTime === slotEnd;
         });
 
         // Capacity is based on number of players. Each booking takes `quantity` slots.

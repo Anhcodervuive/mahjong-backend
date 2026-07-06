@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException, Logger, NotFoundException, Ba
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentService } from '../payment/payment.service';
 import { EmailService } from '../email/email.service';
+import { Smtp2goService } from '../smtp2go/smtp2go.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class BookingService {
     private readonly prisma: PrismaService,
     private readonly paymentService: PaymentService,
     private readonly emailService: EmailService,
+    private readonly smtp2goService: Smtp2goService,
   ) {}
 
   async createBooking(data: any): Promise<{ paymentUrl: string }> {
@@ -165,7 +167,7 @@ export class BookingService {
       }
 
       // Send email
-      await this.emailService.sendBookingConfirmation(
+      await this.smtp2goService.sendBookingConfirmation(
         p.email,
         user.name,
         isNewUser,
