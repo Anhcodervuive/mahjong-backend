@@ -5,6 +5,7 @@ import { seedHomePage } from './seeds/home.seed';
 import { seedAboutPage } from './seeds/about.seed';
 import { seedReceivePage } from './seeds/receive.seed';
 import { seedProducts } from './seeds/products.seed';
+import { seedDynamicPages } from './seeds/dynamic_pages.seed';
 
 const prisma = new PrismaClient();
 
@@ -35,6 +36,7 @@ async function main() {
   await seedHomePage(prisma);
   await seedAboutPage(prisma);
   await seedReceivePage(prisma);
+  await seedDynamicPages(prisma);
 
   // Seed Products (Games, Categories, Sessions)
   await seedProducts(prisma);
