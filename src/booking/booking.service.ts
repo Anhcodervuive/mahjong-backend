@@ -102,7 +102,7 @@ export class BookingService {
     try {
       const payment = await this.prisma.payment.findUnique({
         where: { transactionId: orderReference },
-        include: { booking: { include: { session: true, participants: true } } },
+        include: { booking: { include: { session: { include: { category: { include: { game: true } } } }, participants: true } } },
       });
 
       if (!payment) throw new NotFoundException('Payment record not found');

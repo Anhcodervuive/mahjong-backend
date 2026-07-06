@@ -30,6 +30,8 @@ export class EmailService {
     bookingDetails?: any,
   ) {
     const sessionName = bookingDetails?.session?.title || 'Mahjong Session';
+    const gameName = bookingDetails?.session?.category?.game?.name || 'Mahjong';
+    const levelName = bookingDetails?.session?.category?.name || 'Session';
     const date = new Date(bookingDetails?.bookingDate).toLocaleDateString('en-GB', {
       weekday: 'long',
       year: 'numeric',
@@ -72,7 +74,15 @@ export class EmailService {
             <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px;">Session Details</h3>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td style="padding: 8px 0; color: #aaa; width: 100px;">Session:</td>
+                <td style="padding: 8px 0; color: #aaa; width: 100px;">Game:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${gameName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #aaa;">Level:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${levelName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #aaa;">Session:</td>
                 <td style="padding: 8px 0; font-weight: bold;">${sessionName}</td>
               </tr>
               <tr>
