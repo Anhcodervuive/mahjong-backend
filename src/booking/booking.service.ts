@@ -131,6 +131,14 @@ export class BookingService {
       return {
         success: isSuccess,
         bookingId: payment.bookingId,
+        orderReference: payment.transactionId,
+        sessionName: payment.booking?.session?.title,
+        gameName: payment.booking?.session?.category?.game?.name,
+        levelName: payment.booking?.session?.category?.name,
+        date: payment.booking?.bookingDate?.toISOString(),
+        startTime: payment.booking?.startTime,
+        endTime: payment.booking?.endTime,
+        venue: (payment.booking as any)?.venue,
         status: statusData.state,
       };
     } catch (error) {
