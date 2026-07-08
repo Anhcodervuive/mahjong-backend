@@ -174,14 +174,14 @@ export class BookingService {
         isNewUser = true;
       }
 
-      // Send email using Siteground / Standard Nodemailer (instead of SMTP2GO)
-      await this.emailService.sendBookingConfirmation(
+      // Send email
+      await this.smtp2goService.sendBookingConfirmation(
         p.email,
         user.name,
         isNewUser,
         plainPassword,
         booking
-      ).catch(e => this.logger.error(`Email sending failed for ${p.email}`, e));
+      );
     }));
   }
 
