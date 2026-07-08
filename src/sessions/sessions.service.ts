@@ -19,6 +19,7 @@ export class SessionsService {
 
   async findAll() {
     return this.prisma.session.findMany({
+      where: { isDeleted: false },
       orderBy: { createdAt: 'desc' },
       include: {
         category: {
@@ -35,7 +36,9 @@ export class SessionsService {
         category: {
           include: { game: true },
         },
-        children: true, // If it's a parent session
+        children: {
+          where: { isDeleted: false }
+        }, // If it's a parent session
       }
     });
     if (!session) throw new NotFoundException(`Session with id ${id} not found`);
@@ -59,8 +62,9 @@ export class SessionsService {
     const session = await this.prisma.session.findUnique({ where: { id } });
     if (!session) throw new NotFoundException(`Session with id ${id} not found`);
 
-    return this.prisma.session.delete({
+    return this.prisma.session.update({
       where: { id },
+      data: { isDeleted: true },
     });
   }
 }

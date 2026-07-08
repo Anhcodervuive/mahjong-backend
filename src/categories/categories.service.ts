@@ -15,6 +15,7 @@ export class CategoriesService {
 
   async findAll() {
     return this.prisma.sessionCategory.findMany({
+      where: { isDeleted: false },
       orderBy: { createdAt: 'desc' },
       include: {
         game: true,
@@ -24,7 +25,7 @@ export class CategoriesService {
 
   async findByGame(gameId: number) {
     return this.prisma.sessionCategory.findMany({
-      where: { gameId },
+      where: { gameId, isDeleted: false },
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -34,7 +35,9 @@ export class CategoriesService {
       where: { id },
       include: {
         game: true,
-        sessions: true,
+        sessions: {
+          where: { isDeleted: false }
+        },
       }
     });
     if (!category) throw new NotFoundException(`Category with id ${id} not found`);
@@ -55,8 +58,9 @@ export class CategoriesService {
     const category = await this.prisma.sessionCategory.findUnique({ where: { id } });
     if (!category) throw new NotFoundException(`Category with id ${id} not found`);
 
-    return this.prisma.sessionCategory.delete({
+    return this.prisma.sessionCategory.update({
       where: { id },
+      data: { isDeleted: true },
     });
   }
 }

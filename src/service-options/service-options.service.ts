@@ -6,7 +6,9 @@ export class ServiceOptionsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll() {
-    return this.prisma.serviceOption.findMany();
+    return this.prisma.serviceOption.findMany({
+      where: { isDeleted: false }
+    });
   }
 
   async findOne(id: number) {
@@ -29,6 +31,6 @@ export class ServiceOptionsService {
   }
 
   async remove(id: number) {
-    return this.prisma.serviceOption.delete({ where: { id } });
+    return this.prisma.serviceOption.update({ where: { id }, data: { isDeleted: true } });
   }
 }

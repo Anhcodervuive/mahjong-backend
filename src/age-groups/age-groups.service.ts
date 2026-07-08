@@ -6,7 +6,9 @@ export class AgeGroupsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll() {
-    return this.prisma.ageGroup.findMany();
+    return this.prisma.ageGroup.findMany({
+      where: { isDeleted: false }
+    });
   }
 
   async findOne(id: number) {
@@ -24,6 +26,6 @@ export class AgeGroupsService {
   }
 
   async remove(id: number) {
-    return this.prisma.ageGroup.delete({ where: { id } });
+    return this.prisma.ageGroup.update({ where: { id }, data: { isDeleted: true } });
   }
 }

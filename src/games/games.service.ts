@@ -15,11 +15,15 @@ export class GamesService {
 
   async findAll() {
     return this.prisma.game.findMany({
+      where: { isDeleted: false },
       orderBy: { createdAt: 'desc' },
       include: {
         categories: {
+          where: { isDeleted: false },
           include: {
-            sessions: true,
+            sessions: {
+              where: { isDeleted: false }
+            },
           }
         }
       }
@@ -31,8 +35,11 @@ export class GamesService {
       where: { id },
       include: {
         categories: {
+          where: { isDeleted: false },
           include: {
-            sessions: true,
+            sessions: {
+              where: { isDeleted: false }
+            },
           }
         }
       }
@@ -55,8 +62,9 @@ export class GamesService {
     const game = await this.prisma.game.findUnique({ where: { id } });
     if (!game) throw new NotFoundException(`Game with id ${id} not found`);
 
-    return this.prisma.game.delete({
+    return this.prisma.game.update({
       where: { id },
+      data: { isDeleted: true },
     });
   }
 }
