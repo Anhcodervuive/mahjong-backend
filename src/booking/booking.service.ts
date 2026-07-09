@@ -120,13 +120,24 @@ export class BookingService {
         });
         await this.prisma.booking.update({
           where: { id: payment.bookingId },
-          data: { status: 'CONFIRMED' },
+          data: { status: 'SUCCESS' },
         });
         // Asynchronously process user creation and send emails
         this.processBookingUsers(payment.booking).catch(e => 
           this.logger.error('Background user processing failed', e)
         );
+      } else if (!isSuccess && payment.status !== 'FAILED') {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: 'FAILED' },
+        });
+        await this.prisma.booking.update({
+          where: { id: payment.bookingId },
+          data: { status: 'FAILED' },
+        });
       }
+
+      const venueSetting = await this.prisma.setting.findUnique({ where: { key: 'VENUE_DETAILS' } });
 
       return {
         success: isSuccess,
@@ -138,7 +149,7 @@ export class BookingService {
         date: payment.booking?.bookingDate?.toISOString(),
         startTime: payment.booking?.startTime,
         endTime: payment.booking?.endTime,
-        venue: (payment.booking as any)?.venue,
+        venue: venueSetting?.value || 'Venue address not set',
         status: statusData.state,
       };
     } catch (error) {
@@ -207,9 +218,9 @@ export class BookingService {
         take: limit ? Number(limit) : undefined,
         skip: offset ? Number(offset) : undefined,
         include: {
-          session: true,
+          session: { include: { category: { include: { game: true } } } },
           serviceOption: true,
-          participants: true,
+          participants: { include: { ageGroup: true } },
           payment: true,
         },
       });

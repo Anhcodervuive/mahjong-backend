@@ -10,6 +10,14 @@ datasource db {
 // ------------------------------------------------------
 // 1. AUTHENTICATION, MEDIA, AND CMS
 // ------------------------------------------------------
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum Role {
   USER
   ADMIN
@@ -173,8 +181,8 @@ model AgeGroup {
 
 enum BookingStatus {
   PENDING
-  CONFIRMED
-  CANCELLED
+  SUCCESS
+  FAILED
 }
 
 model Booking {
