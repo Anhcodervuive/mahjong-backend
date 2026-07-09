@@ -31,7 +31,7 @@ export class AvailabilityService {
           lte: endDate.toDate(),
         },
         OR: [
-          { status: 'CONFIRMED' },
+          { status: 'SUCCESS' },
           { status: 'PENDING', createdAt: { gte: fifteenMinsAgo } }
         ]
       },
