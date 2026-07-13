@@ -49,6 +49,15 @@ model CmsPage {
   slug     String       @unique // e.g., "home", "about", "faq"
   title    String // E.g., "Trang chủ"
   sections CmsSection[]
+
+  metaUrl                String?
+  metaTitle              String?
+  metaKeyword            String?
+  metaDescription        String?
+  ogMetaTitle            String?
+  ogMetaDescription      String?
+  twitterMetaTitle       String?
+  twitterMetaDescription String?
 }
 
 model CmsSection {

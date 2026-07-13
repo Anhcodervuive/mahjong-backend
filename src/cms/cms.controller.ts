@@ -26,4 +26,13 @@ export class CmsController {
   ) {
     return this.cmsService.updateSection(parseInt(id, 10), content);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('pages/:slug/seo')
+  async updatePageSeo(
+    @Param('slug') slug: string,
+    @Body() seoData: any,
+  ) {
+    return this.cmsService.updatePageSeo(slug, seoData);
+  }
 }

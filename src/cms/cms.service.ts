@@ -29,4 +29,20 @@ export class CmsService {
       data: { content },
     });
   }
+
+  async updatePageSeo(slug: string, seoData: any) {
+    return this.prisma.cmsPage.update({
+      where: { slug },
+      data: {
+        metaUrl: seoData.metaUrl,
+        metaTitle: seoData.metaTitle,
+        metaKeyword: seoData.metaKeyword,
+        metaDescription: seoData.metaDescription,
+        ogMetaTitle: seoData.ogMetaTitle,
+        ogMetaDescription: seoData.ogMetaDescription,
+        twitterMetaTitle: seoData.twitterMetaTitle,
+        twitterMetaDescription: seoData.twitterMetaDescription,
+      },
+    });
+  }
 }

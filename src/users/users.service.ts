@@ -39,6 +39,32 @@ export class UsersService {
         createdAt: true,
       }
     });
-    return { data, total };
+    
+    const usersWithLastBooking = await Promise.all(
+      data.map(async (user) => {
+        const lastBooking = await this.prisma.booking.findFirst({
+          where: { contactEmail: user.email },
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            bookingDate: true,
+            startTime: true,
+            endTime: true,
+            totalAmount: true,
+            session: {
+              select: {
+                title: true,
+              }
+            }
+          }
+        });
+        return {
+          ...user,
+          lastBooking,
+        };
+      })
+    );
+
+    return { data: usersWithLastBooking, total };
   }
 }

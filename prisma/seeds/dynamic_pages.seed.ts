@@ -1288,4 +1288,31 @@ export async function seedDynamicPages(prisma: PrismaClient) {
     }
   });
 
+  console.log('Seeding points-calculator...');
+  const page_points_calculator = await prisma.cmsPage.upsert({
+    where: { slug: 'points-calculator' },
+    update: { title: 'points calculator' },
+    create: { slug: 'points-calculator', title: 'points calculator' },
+  });
+
+  await prisma.cmsSection.upsert({
+    where: { pageId_key: { pageId: page_points_calculator.id, key: 'points-calculator_content' } },
+    update: { content: {
+      "text_0_taiwanese_mahjong": "Taiwanese Mahjong",
+      "text_1_points_calculator": "Points Calculator",
+      "text_2_score_with_confidence_play_wit": "Score with Confidence. Play with Precision.",
+      "text_3_calculate_your_taiwanese_mahjo": "Calculate your Taiwanese Mahjong score instantly. Select your combinations and let the calculator do the math for you."
+    } },
+    create: {
+      key: 'points-calculator_content',
+      name: 'Page Content',
+      pageId: page_points_calculator.id,
+      content: {
+        "text_0_taiwanese_mahjong": "Taiwanese Mahjong",
+        "text_1_points_calculator": "Points Calculator",
+        "text_2_score_with_confidence_play_wit": "Score with Confidence. Play with Precision.",
+        "text_3_calculate_your_taiwanese_mahjo": "Calculate your Taiwanese Mahjong score instantly. Select your combinations and let the calculator do the math for you."
+      }
+    }
+  });
 }
