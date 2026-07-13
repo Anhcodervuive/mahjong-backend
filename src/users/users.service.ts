@@ -55,6 +55,14 @@ export class UsersService {
               select: {
                 title: true,
               }
+            },
+            participants: {
+              where: { isOwner: true },
+              select: {
+                ageGroup: {
+                  select: { name: true }
+                }
+              }
             }
           }
         });
