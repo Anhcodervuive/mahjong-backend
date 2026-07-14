@@ -15,7 +15,8 @@ export async function seedPointsCalculatorPage(prisma: PrismaClient) {
     where: { pageId_key: { pageId: page.id, key: 'hero' } },
     update: { content: {
       "title": "Taiwanese Mahjong",
-      "subtitle": "Calculate your Taiwanese Mahjong score instantly. Select your combinations and let the calculator do the math for you."
+      "subtitle": "Calculate your Taiwanese Mahjong score instantly. Select your combinations and let the calculator do the math for you.",
+      "backgroundImage": "/uploads/images/playing-mahjong-table_1781599451923.jpg"
     } },
     create: {
       key: 'hero',
@@ -23,7 +24,8 @@ export async function seedPointsCalculatorPage(prisma: PrismaClient) {
       pageId: page.id,
       content: {
         "title": "Taiwanese Mahjong",
-        "subtitle": "Calculate your Taiwanese Mahjong score instantly. Select your combinations and let the calculator do the math for you."
+        "subtitle": "Calculate your Taiwanese Mahjong score instantly. Select your combinations and let the calculator do the math for you.",
+        "backgroundImage": "/uploads/images/playing-mahjong-table_1781599451923.jpg"
       }
     }
   });
