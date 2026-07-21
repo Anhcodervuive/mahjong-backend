@@ -9,7 +9,9 @@ export class CmsService {
   async getAllPages() {
     return this.prisma.cmsPage.findMany({
       include: {
-        sections: true,
+        sections: {
+          orderBy: { order: 'asc' },
+        },
       },
     });
   }
@@ -18,7 +20,9 @@ export class CmsService {
     return this.prisma.cmsPage.findUnique({
       where: { slug },
       include: {
-        sections: true,
+        sections: {
+          orderBy: { order: 'asc' },
+        },
       },
     });
   }
@@ -28,6 +32,16 @@ export class CmsService {
       where: { id },
       data: { content },
     });
+  }
+
+  async reorderSections(items: { id: number; order: number }[]) {
+    const transactions = items.map((item) =>
+      this.prisma.cmsSection.update({
+        where: { id: item.id },
+        data: { order: item.order },
+      }),
+    );
+    return this.prisma.$transaction(transactions);
   }
 
   async updatePageSeo(slug: string, seoData: any) {

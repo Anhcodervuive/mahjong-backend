@@ -66,6 +66,7 @@ model CmsSection {
   key     String
   name    String?
   content Json
+  order   Int     @default(0)
 
   page CmsPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
 

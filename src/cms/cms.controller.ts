@@ -19,6 +19,12 @@ export class CmsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Put('sections/reorder')
+  async reorderSections(@Body('items') items: { id: number; order: number }[]) {
+    return this.cmsService.reorderSections(items);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Put('sections/:id')
   async updateSection(
     @Param('id') id: string,

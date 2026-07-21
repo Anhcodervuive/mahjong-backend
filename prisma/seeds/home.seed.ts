@@ -136,13 +136,15 @@ export async function seedHomePage(prisma: PrismaClient) {
         desc: 'Every Mahjong Success training level is designed to provide a structured, engaging, and practical learning experience that combines instruction, strategy, and gameplay.',
         img1: '/uploads/receive-banner-1.jpg',
         img2: '/uploads/receive-banner-2.jpg',
-        items: [
-          { title: "Comprehensive Training & Instruction", desc: "Learn through a detailed trainer-led presentation that covers the concepts, rules, strategies, techniques, and gameplay principles relevant to that level." },
-          { title: "Frequently Asked Questions & Expert Guidance", desc: "Gain clarity through detailed explanations and answers to commonly asked questions, helping you better understand the game and avoid common mistakes." },
-          { title: "Understand the Tiles & Their Uses", desc: "Learn about the tiles used at each level, their significance, how they interact within different hands, and how to maximise their value during gameplay." },
-          { title: "Learn New Concepts & Strategies", desc: "Master the key concepts, hand-building techniques, strategic approaches, and decision-making skills introduced at that level." },
-          { title: "Guided Learning Games", desc: "Play carefully selected Mahjong games designed to reinforce the concepts taught during training. Each game includes detailed explanations, practical examples, and strategic insights to accelerate learning." },
-          { title: "Apply Learning Through Practical Play", desc: "Put theory into practice by applying newly learned concepts, tile knowledge, and strategies during gameplay, helping you build experience and confidence." }
+        cards1: [
+          { icon: "BookOpen", title: "Comprehensive Training & Instruction", desc: "Learn through a detailed trainer-led presentation that covers the concepts, rules, strategies, techniques, and gameplay principles relevant to that level." },
+          { icon: "HelpCircle", title: "Frequently Asked Questions & Expert Guidance", desc: "Gain clarity through detailed explanations and answers to commonly asked questions, helping you better understand the game and avoid common mistakes." },
+          { icon: "Layers", title: "Understand the Tiles & Their Uses", desc: "Learn about the tiles used at each level, their significance, how they interact within different hands, and how to maximise their value during gameplay." }
+        ],
+        cards2: [
+          { icon: "Target", title: "Learn New Concepts & Strategies", desc: "Master the key concepts, hand-building techniques, strategic approaches, and decision-making skills introduced at that level." },
+          { icon: "GraduationCap", title: "Guided Learning Games", desc: "Play carefully selected Mahjong games designed to reinforce the concepts taught during training. Each game includes detailed explanations, practical examples, and strategic insights to accelerate learning." },
+          { icon: "Users", title: "Apply Learning Through Practical Play", desc: "Put theory into practice by applying newly learned concepts, tile knowledge, and strategies during gameplay, helping you build experience and confidence." }
         ],
         button: 'Learn. Play. Apply. Succeed.'
       }
@@ -245,8 +247,18 @@ export async function seedHomePage(prisma: PrismaClient) {
         title: 'The Thinking Table',
         desc1: 'The Thinking Table offers a unique and engaging corporate learning experience, using the strategic framework of Mahjong to develop critical thinking, decision making, risk management, and team collaboration.',
         desc2: 'Designed for professionals, teams, and organisations, this interactive workshop goes beyond traditional corporate training by immersing participants in a fast-paced, strategic game that mirrors real-world business challenges.',
-        desc3: 'Enhance your team’s strategic capabilities through a highly interactive and intellectually stimulating experience.',
+        desc3: 'Enhance your team\u2019s strategic capabilities through a highly interactive and intellectually stimulating experience.',
         btn: 'Discover The Thinking Table'
+      }
+    },
+    {
+      key: 'community',
+      name: 'Community / Join A Circle',
+      content: {
+        tag: 'Community',
+        title: 'Join the Mahjong Success Circle',
+        subtitle: 'Learn Together. Play Together. Succeed Together.',
+        desc: "Whether you're a beginner, social player, or experienced enthusiast, you'll find a welcoming environment where you can improve your game, meet like-minded people, and enjoy the culture and camaraderie of Mahjong."
       }
     }
   ];
