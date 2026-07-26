@@ -1,13 +1,15 @@
 import { PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
-import { seedHomePage } from './seeds/home.seed';
+import { seed_home } from './seeds/home.seed';
 import { seedAboutPage } from './seeds/about.seed';
 import { seedReceivePage } from './seeds/receive.seed';
 import { seedProducts } from './seeds/products.seed';
 import { seedDynamicPages } from './seeds/dynamic_pages.seed';
 import { seedFastTrackBundlesPage } from './seeds/fast_track_bundles.seed';
-import { seedPointsCalculatorPage } from './seeds/points_calculator.seed';
+import { seed_points_calculator } from './seeds/points_calculator.seed';
+import { seed_international_points_calculator } from './seeds/international_points_calculator.seed';
+import { seed_guided_games } from './seeds/guided_games.seed';
 
 const prisma = new PrismaClient();
 
@@ -35,12 +37,14 @@ async function main() {
 
   // Seed CMS pages
   console.log('Seeding CMS data...');
-  await seedHomePage(prisma);
+  await seed_home(prisma);
   await seedAboutPage(prisma);
   await seedReceivePage(prisma);
   await seedDynamicPages(prisma);
   await seedFastTrackBundlesPage(prisma);
-  await seedPointsCalculatorPage(prisma);
+  await seed_points_calculator(prisma);
+  await seed_international_points_calculator(prisma);
+  await seed_guided_games(prisma);
 
   // Seed Products (Games, Categories, Sessions)
   await seedProducts(prisma);
