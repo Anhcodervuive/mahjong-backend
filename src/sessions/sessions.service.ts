@@ -20,7 +20,7 @@ export class SessionsService {
   async findAll() {
     return this.prisma.session.findMany({
       where: { isDeleted: false },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       include: {
         category: {
           include: { game: true },
@@ -37,7 +37,8 @@ export class SessionsService {
           include: { game: true },
         },
         children: {
-          where: { isDeleted: false }
+          where: { isDeleted: false },
+          orderBy: [{ order: 'asc' }, { createdAt: 'desc' }]
         }, // If it's a parent session
       }
     });

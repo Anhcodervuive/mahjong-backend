@@ -45,4 +45,8 @@ export class CreateSessionDto {
   @Type(() => ServiceOptionPriceDto)
   @IsOptional()
   serviceOptions?: ServiceOptionPriceDto[];
+
+  @IsInt()
+  @IsOptional()
+  order?: number;
 }

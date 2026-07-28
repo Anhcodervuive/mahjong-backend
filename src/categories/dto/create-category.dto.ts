@@ -10,4 +10,8 @@ export class CreateCategoryDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsInt()
+  @IsOptional()
+  order?: number;
 }

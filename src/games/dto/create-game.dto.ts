@@ -15,4 +15,8 @@ export class CreateGameDto {
   @IsInt()
   @IsOptional()
   iconImageId?: number;
+
+  @IsInt()
+  @IsOptional()
+  order?: number;
 }

@@ -82,6 +82,7 @@ model Game {
   description  String?
   coverImageId Int? // Links to Media.id implicitly (no hard relation needed for simplicity)
   iconImageId  Int?
+  order        Int     @default(0)
 
   categories SessionCategory[]
 
@@ -95,6 +96,7 @@ model SessionCategory {
   gameId      Int
   name        String // e.g., Levels, Guided Play
   description String?
+  order       Int     @default(0)
 
   game     Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
   sessions Session[]
@@ -117,6 +119,7 @@ model Session {
   duration       Int // Duration in minutes
   minPlayers     Int     @default(1)
   maxPlayers     Int
+  order          Int     @default(0)
 
   // Relations
   category SessionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)

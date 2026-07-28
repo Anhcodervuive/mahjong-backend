@@ -16,7 +16,7 @@ export class CategoriesService {
   async findAll() {
     return this.prisma.sessionCategory.findMany({
       where: { isDeleted: false },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       include: {
         game: true,
       }
@@ -26,7 +26,7 @@ export class CategoriesService {
   async findByGame(gameId: number) {
     return this.prisma.sessionCategory.findMany({
       where: { gameId, isDeleted: false },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     });
   }
 
@@ -36,7 +36,8 @@ export class CategoriesService {
       include: {
         game: true,
         sessions: {
-          where: { isDeleted: false }
+          where: { isDeleted: false },
+          orderBy: [{ order: 'asc' }, { createdAt: 'desc' }]
         },
       }
     });

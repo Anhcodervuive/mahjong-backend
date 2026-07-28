@@ -16,13 +16,15 @@ export class GamesService {
   async findAll() {
     return this.prisma.game.findMany({
       where: { isDeleted: false },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       include: {
         categories: {
           where: { isDeleted: false },
+          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
           include: {
             sessions: {
-              where: { isDeleted: false }
+              where: { isDeleted: false },
+              orderBy: [{ order: 'asc' }, { createdAt: 'desc' }]
             },
           }
         }
@@ -36,9 +38,11 @@ export class GamesService {
       include: {
         categories: {
           where: { isDeleted: false },
+          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
           include: {
             sessions: {
-              where: { isDeleted: false }
+              where: { isDeleted: false },
+              orderBy: [{ order: 'asc' }, { createdAt: 'desc' }]
             },
           }
         }
