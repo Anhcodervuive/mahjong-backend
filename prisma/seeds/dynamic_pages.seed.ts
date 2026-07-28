@@ -414,13 +414,13 @@ export async function seedDynamicPages(prisma: PrismaClient) {
   
   // Ensure page exists
   const page_taiwan_mahjong = await prisma.cmsPage.upsert({
-    where: { slug: 'taiwan-mahjong' },
-    update: { title: 'taiwan mahjong' },
-    create: { slug: 'taiwan-mahjong', title: 'taiwan mahjong' },
+    where: { slug: 'taiwanese-mahjong' },
+    update: { title: 'Taiwanese Mahjong' },
+    create: { slug: 'taiwanese-mahjong', title: 'Taiwanese Mahjong' },
   });
 
   await prisma.cmsSection.upsert({
-    where: { pageId_key: { pageId: page_taiwan_mahjong.id, key: 'taiwan-mahjong_content' } },
+    where: { pageId_key: { pageId: page_taiwan_mahjong.id, key: 'taiwanese-mahjong_content' } },
     update: { content: {
   "text_0_taiwanese": "Taiwanese",
   "text_1_master": "Master",
@@ -441,7 +441,7 @@ export async function seedDynamicPages(prisma: PrismaClient) {
   "text_16_book_foundation": "Book Foundation"
 } },
     create: {
-      key: 'taiwan-mahjong_content',
+      key: 'taiwanese-mahjong_content',
       name: 'Page Content',
       pageId: page_taiwan_mahjong.id,
       content: {
@@ -470,13 +470,13 @@ export async function seedDynamicPages(prisma: PrismaClient) {
   
   // Ensure page exists
   const page_atf_mahjong = await prisma.cmsPage.upsert({
-    where: { slug: 'atf-mahjong' },
-    update: { title: 'atf mahjong' },
-    create: { slug: 'atf-mahjong', title: 'atf mahjong' },
+    where: { slug: 'western-mahjong' },
+    update: { title: 'Western Mahjong' },
+    create: { slug: 'western-mahjong', title: 'Western Mahjong' },
   });
 
   await prisma.cmsSection.upsert({
-    where: { pageId_key: { pageId: page_atf_mahjong.id, key: 'atf-mahjong_content' } },
+    where: { pageId_key: { pageId: page_atf_mahjong.id, key: 'western-mahjong_content' } },
     update: { content: {
   "text_0_nmjl": "NMJL",
   "text_1_master": "Master",
@@ -497,7 +497,7 @@ export async function seedDynamicPages(prisma: PrismaClient) {
   "text_16_book_foundation": "Book Foundation"
 } },
     create: {
-      key: 'atf-mahjong_content',
+      key: 'western-mahjong_content',
       name: 'Page Content',
       pageId: page_atf_mahjong.id,
       content: {
