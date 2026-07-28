@@ -64,4 +64,15 @@ export class CategoriesService {
       data: { isDeleted: true },
     });
   }
+
+  async reorder(itemIds: number[]) {
+    const transactions = itemIds.map((id, index) => 
+      this.prisma.sessionCategory.update({
+        where: { id },
+        data: { order: index + 1 }
+      })
+    );
+    await this.prisma.$transaction(transactions);
+    return { success: true };
+  }
 }

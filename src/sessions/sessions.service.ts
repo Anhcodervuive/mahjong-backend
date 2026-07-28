@@ -68,4 +68,15 @@ export class SessionsService {
       data: { isDeleted: true },
     });
   }
+
+  async reorder(itemIds: number[]) {
+    const transactions = itemIds.map((id, index) => 
+      this.prisma.session.update({
+        where: { id },
+        data: { order: index + 1 }
+      })
+    );
+    await this.prisma.$transaction(transactions);
+    return { success: true };
+  }
 }
