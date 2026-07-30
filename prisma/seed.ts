@@ -10,6 +10,7 @@ import { seedFastTrackBundlesPage } from './seeds/fast_track_bundles.seed';
 import { seed_points_calculator } from './seeds/points_calculator.seed';
 import { seed_international_points_calculator } from './seeds/international_points_calculator.seed';
 import { seed_guided_games } from './seeds/guided_games.seed';
+import { seedLocations } from './seeds/locations.seed';
 
 const prisma = new PrismaClient();
 
@@ -48,6 +49,9 @@ async function main() {
 
   // Seed Products (Games, Categories, Sessions)
   await seedProducts(prisma);
+
+  // Seed Locations
+  await seedLocations(prisma);
 }
 
 main()
