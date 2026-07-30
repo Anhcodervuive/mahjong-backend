@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Patch, Query } from '@nestjs/common';
 import { GamesService } from './games.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
@@ -12,8 +12,8 @@ export class GamesController {
   constructor(private readonly gamesService: GamesService) {}
 
   @Get()
-  findAll() {
-    return this.gamesService.findAll();
+  findAll(@Query('type') type?: string) {
+    return this.gamesService.findAll(type as any);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

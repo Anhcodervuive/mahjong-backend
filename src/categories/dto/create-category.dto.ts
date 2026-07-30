@@ -1,6 +1,10 @@
-import { IsString, IsOptional, IsInt } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsEnum } from 'class-validator';
+import { BookingType } from '@prisma/client';
 
 export class CreateCategoryDto {
+  @IsEnum(BookingType)
+  @IsOptional()
+  type?: BookingType;
   @IsInt()
   gameId: number;
 

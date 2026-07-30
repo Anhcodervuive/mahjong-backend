@@ -59,4 +59,16 @@ export class CmsService {
       },
     });
   }
+
+  async renamePointsCalculatorSlug() {
+    const page = await this.prisma.cmsPage.findUnique({ where: { slug: 'points-calculator' } });
+    if (page) {
+      await this.prisma.cmsPage.update({
+        where: { slug: 'points-calculator' },
+        data: { slug: 'taiwanese-points-calculator', title: 'Taiwanese Points Calculator' }
+      });
+      return { status: 'Success', message: 'Renamed points-calculator to taiwanese-points-calculator' };
+    }
+    return { status: 'Skipped', message: 'Not found or already renamed' };
+  }
 }

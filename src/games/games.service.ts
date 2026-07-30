@@ -13,17 +13,22 @@ export class GamesService {
     });
   }
 
-  async findAll() {
+  async findAll(type?: any) {
+    const where: any = { isDeleted: false };
+    if (type) {
+      where.type = type;
+    }
+    
     return this.prisma.game.findMany({
-      where: { isDeleted: false },
+      where,
       orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       include: {
         categories: {
-          where: { isDeleted: false },
+          where: type ? { isDeleted: false, type } : { isDeleted: false },
           orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
           include: {
             sessions: {
-              where: { isDeleted: false },
+              where: type ? { isDeleted: false, type } : { isDeleted: false },
               orderBy: [{ order: 'asc' }, { createdAt: 'desc' }]
             },
           }

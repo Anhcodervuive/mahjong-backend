@@ -42,6 +42,7 @@ export class BookingService {
         data: {
           sessionId: data.sessionId,
           serviceOptionId: data.serviceOptionId,
+          locationId: data.locationId || null,
           bookingDate,
           startTime: data.startTime,
           endTime: data.endTime,
@@ -222,6 +223,7 @@ export class BookingService {
           serviceOption: true,
           participants: { include: { ageGroup: true } },
           payment: true,
+          location: true,
         },
       });
 

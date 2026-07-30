@@ -17,9 +17,14 @@ export class SessionsService {
     });
   }
 
-  async findAll() {
+  async findAll(type?: any) {
+    const where: any = { isDeleted: false };
+    if (type) {
+      where.type = type;
+    }
+
     return this.prisma.session.findMany({
-      where: { isDeleted: false },
+      where,
       orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       include: {
         category: {

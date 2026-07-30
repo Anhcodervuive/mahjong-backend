@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Patch, Query } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
@@ -12,8 +12,8 @@ export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 
   @Get()
-  findAll() {
-    return this.sessionsService.findAll();
+  findAll(@Query('type') type?: string) {
+    return this.sessionsService.findAll(type as any);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

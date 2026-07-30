@@ -27,6 +27,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
 import { Smtp2goModule } from './smtp2go/smtp2go.module';
 import { SettingsModule } from './settings/settings.module';
+import { LocationsModule } from './locations/locations.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { SettingsModule } from './settings/settings.module';
     EmailModule,
     Smtp2goModule,
     SettingsModule,
+    LocationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

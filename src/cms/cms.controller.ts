@@ -41,4 +41,9 @@ export class CmsController {
   ) {
     return this.cmsService.updatePageSeo(slug, seoData);
   }
+
+  @Get('rename-slug-temp')
+  async renameSlugTemp() {
+    return this.cmsService.renamePointsCalculatorSlug();
+  }
 }

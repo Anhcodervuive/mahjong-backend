@@ -13,9 +13,14 @@ export class CategoriesService {
     });
   }
 
-  async findAll() {
+  async findAll(type?: any) {
+    const where: any = { isDeleted: false };
+    if (type) {
+      where.type = type;
+    }
+    
     return this.prisma.sessionCategory.findMany({
-      where: { isDeleted: false },
+      where,
       orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       include: {
         game: true,

@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsInt, IsNumber, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsNumber, IsArray, ValidateNested, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+import { BookingType } from '@prisma/client';
 
 class ServiceOptionPriceDto {
   @IsInt()
@@ -10,6 +11,9 @@ class ServiceOptionPriceDto {
 }
 
 export class CreateSessionDto {
+  @IsEnum(BookingType)
+  @IsOptional()
+  type?: BookingType;
   @IsInt()
   categoryId: number;
 
