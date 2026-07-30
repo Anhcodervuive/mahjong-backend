@@ -4,7 +4,7 @@ export async function seedProducts(prisma: PrismaClient) {
   console.log('Seeding Games, Categories, and Sessions...');
 
   // 1. International Goulash
-  let goulash = await prisma.game.findFirst({ where: { name: 'International Goulash' } });
+  let goulash = await prisma.game.findFirst({ where: { name: 'International Goulash', isDeleted: false } });
   if (!goulash) {
     goulash = await prisma.game.create({
       data: {
@@ -43,7 +43,7 @@ export async function seedProducts(prisma: PrismaClient) {
   }
 
   // 2. American Mahjong
-  let american = await prisma.game.findFirst({ where: { name: 'American Mahjong' } });
+  let american = await prisma.game.findFirst({ where: { name: 'American Mahjong', isDeleted: false } });
   if (!american) {
     american = await prisma.game.create({
       data: {
@@ -82,7 +82,7 @@ export async function seedProducts(prisma: PrismaClient) {
   }
 
   // 3. Asian Traditional Format (ATF)
-  let atf = await prisma.game.findFirst({ where: { name: 'Asian Traditional Format (ATF)' } });
+  let atf = await prisma.game.findFirst({ where: { name: 'Asian Traditional Format (ATF)', isDeleted: false } });
   if (!atf) {
     atf = await prisma.game.create({
       data: {

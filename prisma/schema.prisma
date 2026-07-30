@@ -95,7 +95,10 @@ model Game {
   updatedAt DateTime @updatedAt
   isDeleted Boolean  @default(false)
   type      BookingType @default(TRAINING)
+
+  joinCircleRequests JoinCircleRequest[]
 }
+
 
 model SessionCategory {
   id          Int     @id @default(autoincrement())
@@ -294,6 +297,40 @@ model Payment {
   status        PaymentStatus @default(PENDING)
 
   booking Booking @relation(fields: [bookingId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+}
+
+// ------------------------------------------------------
+// 7. INQUIRIES & REQUESTS
+// ------------------------------------------------------
+enum JoinCircleStatus {
+  PENDING
+  CONTACTED
+  COMPLETED
+}
+
+model JoinCircleRequest {
+  id          Int      @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String
+  phone       String
+  gameId      Int
+  level       String
+  ageGroup    String
+  days        String[]
+  times       String[]
+  groupSize   String
+  message     String?
+  friendEmail String?
+  friendPhone String?
+
+  status JoinCircleStatus @default(PENDING)
+
+  game Game @relation(fields: [gameId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -28,6 +28,7 @@ import { EmailModule } from './email/email.module';
 import { Smtp2goModule } from './smtp2go/smtp2go.module';
 import { SettingsModule } from './settings/settings.module';
 import { LocationsModule } from './locations/locations.module';
+import { JoinCircleModule } from './join-circle/join-circle.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { LocationsModule } from './locations/locations.module';
     Smtp2goModule,
     SettingsModule,
     LocationsModule,
+    JoinCircleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

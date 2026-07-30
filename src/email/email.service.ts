@@ -124,4 +124,43 @@ export class EmailService {
       this.logger.error(`Failed to send email to ${email}`, error);
     }
   }
+
+  async sendJoinCircleAdminNotification(request: any) {
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || this.configService.get<string>('SMTP_USER');
+    
+    const htmlContent = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #071F1B;">New Join Circle Request</h2>
+        <p>A new request has been submitted to join a circle.</p>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Name:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.firstName} ${request.lastName}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Email:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.email}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.phone}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Game:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.game?.name || 'N/A'}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Level:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.level}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Age Group:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.ageGroup}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Days:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.days.join(', ')}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Times:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.times.join(', ')}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Group Size:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.groupSize}</td></tr>
+        </table>
+        ${request.message ? `<p><strong>Message:</strong><br>${request.message}</p>` : ''}
+        ${request.friendEmail ? `<p><strong>Friend Email:</strong> ${request.friendEmail}</p>` : ''}
+        ${request.friendPhone ? `<p><strong>Friend Phone:</strong> ${request.friendPhone}</p>` : ''}
+        
+        <p style="margin-top: 20px;">Please check the admin panel for more details.</p>
+      </div>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: '"Mahjong Success" <' + this.configService.get<string>('SMTP_USER') + '>',
+        to: adminEmail,
+        subject: 'New Join Circle Request',
+        html: htmlContent,
+      });
+      this.logger.log(`Join circle notification sent to ${adminEmail}`);
+    } catch (error) {
+      this.logger.error(`Failed to send join circle notification to ${adminEmail}`, error);
+    }
+  }
 }
