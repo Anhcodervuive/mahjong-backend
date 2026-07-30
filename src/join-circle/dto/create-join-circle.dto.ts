@@ -21,6 +21,10 @@ export class CreateJoinCircleDto {
   @IsNotEmpty()
   gameId: number;
 
+  @IsInt()
+  @IsOptional()
+  locationId?: number;
+
   @IsString()
   @IsNotEmpty()
   level: string;

@@ -26,6 +26,7 @@ export class JoinCircleService {
         message: createDto.message,
         friendEmail: createDto.friendEmail,
         friendPhone: createDto.friendPhone,
+        locationId: createDto.locationId,
       },
       include: {
         game: true,
@@ -39,6 +40,7 @@ export class JoinCircleService {
     return this.prisma.joinCircleRequest.findMany({
       include: {
         game: true,
+        location: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -49,7 +51,7 @@ export class JoinCircleService {
   findOne(id: number) {
     return this.prisma.joinCircleRequest.findUnique({
       where: { id },
-      include: { game: true },
+      include: { game: true, location: true },
     });
   }
 
