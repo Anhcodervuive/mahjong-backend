@@ -7,9 +7,16 @@ import { UpdateLocationDto } from './dto/update-location.dto';
 export class LocationsService {
   constructor(private prisma: PrismaService) {}
 
-  create(createLocationDto: CreateLocationDto) {
+  async create(createLocationDto: CreateLocationDto) {
+    const { schedules, ...data } = createLocationDto;
     return this.prisma.location.create({
-      data: createLocationDto,
+      data: {
+        ...data,
+        schedules: schedules ? {
+          create: schedules
+        } : undefined
+      },
+      include: { schedules: true }
     });
   }
 
@@ -17,11 +24,15 @@ export class LocationsService {
     return this.prisma.location.findMany({
       where: { isDeleted: false },
       orderBy: { order: 'asc' },
+      include: { schedules: true }
     });
   }
 
   async findOne(id: number) {
-    const location = await this.prisma.location.findUnique({ where: { id } });
+    const location = await this.prisma.location.findUnique({ 
+      where: { id },
+      include: { schedules: true }
+    });
     if (!location) throw new NotFoundException(`Location with id ${id} not found`);
     return location;
   }
@@ -30,9 +41,28 @@ export class LocationsService {
     const location = await this.prisma.location.findUnique({ where: { id } });
     if (!location) throw new NotFoundException(`Location with id ${id} not found`);
 
-    return this.prisma.location.update({
-      where: { id },
-      data: updateLocationDto,
+    const { schedules, ...data } = updateLocationDto;
+
+    return this.prisma.$transaction(async (prisma) => {
+      if (schedules) {
+        // Delete old schedules and create new ones
+        await prisma.locationSchedule.deleteMany({
+          where: { locationId: id }
+        });
+      }
+
+      return prisma.location.update({
+        where: { id },
+        data: {
+          ...data,
+          ...(schedules ? {
+            schedules: {
+              create: schedules
+            }
+          } : {})
+        },
+        include: { schedules: true }
+      });
     });
   }
 

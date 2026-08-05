@@ -22,4 +22,16 @@ export class CreateLocationDto {
   @IsOptional()
   @Type(() => Number)
   price?: number;
+
+  @IsString()
+  @IsOptional()
+  daysAndTime?: string;
+
+  @IsOptional()
+  schedules?: {
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    capacity: number;
+  }[];
 }

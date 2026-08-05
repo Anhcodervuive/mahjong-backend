@@ -91,14 +91,13 @@ model Game {
 
   categories SessionCategory[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  isDeleted Boolean     @default(false)
   type      BookingType @default(TRAINING)
 
   joinCircleRequests JoinCircleRequest[]
 }
-
 
 model SessionCategory {
   id          Int     @id @default(autoincrement())
@@ -110,9 +109,9 @@ model SessionCategory {
   game     Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
   sessions Session[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  isDeleted Boolean     @default(false)
   type      BookingType @default(TRAINING)
 }
 
@@ -138,9 +137,9 @@ model Session {
 
   bookings Booking[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  isDeleted Boolean     @default(false)
   type      BookingType @default(TRAINING)
 }
 
@@ -165,19 +164,37 @@ model ServiceOption {
 // ------------------------------------------------------
 model Location {
   id          Int     @id @default(autoincrement())
-  name        String  // e.g., Studio 1, User Location
+  name        String // e.g., Studio 1, User Location
   description String?
   address     String?
   mapUrl      String?
   price       Decimal @default(0) @db.Decimal(10, 2)
+  daysAndTime String? // e.g., "Mon-Fri, 10am-5pm"
   order       Int     @default(0)
   isDeleted   Boolean @default(false)
 
-  bookings Booking[]
-  joinCircleRequests JoinCircleRequest[]
+  bookings           Booking[]
+  joinCircleRequests JoinCircleRequest[] @relation("JoinCircleRequestToLocation")
+  schedules          LocationSchedule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model LocationSchedule {
+  id         Int    @id @default(autoincrement())
+  locationId Int
+  dayOfWeek  Int // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  startTime  String // e.g., "10:00"
+  endTime    String // e.g., "22:00"
+  capacity   Int    @default(8)
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([locationId, dayOfWeek, startTime, endTime])
 }
 
 // ------------------------------------------------------
@@ -230,7 +247,7 @@ enum BookingStatus {
 }
 
 model Booking {
-  id              Int @id @default(autoincrement())
+  id              Int  @id @default(autoincrement())
   sessionId       Int
   serviceOptionId Int
   locationId      Int?
@@ -332,8 +349,7 @@ model JoinCircleRequest {
   status JoinCircleStatus @default(PENDING)
 
   game     Game      @relation(fields: [gameId], references: [id])
-  location Location? @relation(fields: [locationId], references: [id])
-  locationId Int?
+  locations Location[] @relation("JoinCircleRequestToLocation")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

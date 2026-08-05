@@ -26,10 +26,15 @@ export class JoinCircleService {
         message: createDto.message,
         friendEmail: createDto.friendEmail,
         friendPhone: createDto.friendPhone,
-        locationId: createDto.locationId,
+        locations: createDto.locationIds && createDto.locationIds.length > 0
+          ? {
+              connect: createDto.locationIds.map(id => ({ id })),
+            }
+          : undefined,
       },
       include: {
         game: true,
+        locations: true,
       }
     });
 
@@ -40,7 +45,7 @@ export class JoinCircleService {
     return this.prisma.joinCircleRequest.findMany({
       include: {
         game: true,
-        location: true,
+        locations: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -51,7 +56,7 @@ export class JoinCircleService {
   findOne(id: number) {
     return this.prisma.joinCircleRequest.findUnique({
       where: { id },
-      include: { game: true, location: true },
+      include: { game: true, locations: true },
     });
   }
 

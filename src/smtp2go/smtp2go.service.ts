@@ -17,13 +17,41 @@ export class Smtp2goService {
     const sessionName = bookingDetails?.session?.title || 'Mahjong Session';
     const gameName = bookingDetails?.session?.category?.game?.name || 'Mahjong';
     const levelName = bookingDetails?.session?.category?.name || 'Session';
+    const bookingType = bookingDetails?.session?.type || 'TRAINING';
+    const isGuidedGame = bookingType === 'GUIDED_GAME';
+
     const date = new Date(bookingDetails?.bookingDate).toLocaleDateString('en-GB', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-    const time = `${bookingDetails?.startTime} - ${bookingDetails?.endTime}`;
+
+    const formatTime = (t: string) => {
+      if (!t) return '';
+      const [h, m] = t.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const hour = h % 12 === 0 ? 12 : h % 12;
+      return `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
+    };
+    const time = `${formatTime(bookingDetails?.startTime)} – ${formatTime(bookingDetails?.endTime)}`;
+
+    // --- Location block (only for Guided Game) ---
+    const location = bookingDetails?.location;
+    const locationBlock = (isGuidedGame && location)
+      ? `
+        <tr>
+          <td colspan="2" style="padding: 12px 0 4px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">📍 Meeting Location</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #aaa; width: 120px;">Area:</td>
+          <td style="padding: 4px 0; font-weight: bold;">${location.name}</td>
+        </tr>
+        ${location.description ? `<tr><td style="padding: 4px 0; color: #aaa;">Venue:</td><td style="padding: 4px 0; font-weight: bold;">${location.description}</td></tr>` : ''}
+        ${location.address ? `<tr><td style="padding: 4px 0; color: #aaa;">Address:</td><td style="padding: 4px 0;">${location.address}</td></tr>` : ''}
+        ${location.mapUrl ? `<tr><td style="padding: 4px 0; color: #aaa;">Map:</td><td style="padding: 4px 0;"><a href="${location.mapUrl}" style="color: #D4AF6A;">View on Map</a></td></tr>` : ''}
+      `
+      : '';
 
     const loginSection = isNewUser
       ? `
@@ -41,29 +69,32 @@ export class Smtp2goService {
         </div>
       `;
 
+    const typeLabel = isGuidedGame ? '🎮 Guided Game' : '📚 Training Session';
+
     const htmlContent = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
         
         <!-- Header -->
         <div style="background-color: #071F1B; padding: 30px; text-align: center;">
           <h1 style="color: #D4AF6A; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Mahjong Success</h1>
+          <p style="color: rgba(212,175,106,0.7); margin: 8px 0 0; font-size: 13px;">${typeLabel}</p>
         </div>
         
         <!-- Body -->
         <div style="padding: 40px 30px;">
-          <h2 style="color: #071F1B; margin-top: 0;">Booking Confirmed!</h2>
+          <h2 style="color: #071F1B; margin-top: 0;">Booking Confirmed! 🎉</h2>
           <p style="color: #444; font-size: 16px; line-height: 1.6;">Hello <strong>${fullName}</strong>,</p>
-          <p style="color: #444; font-size: 16px; line-height: 1.6;">Your seat for the upcoming Mahjong session has been successfully booked. We can't wait to see you at the table!</p>
+          <p style="color: #444; font-size: 16px; line-height: 1.6;">Your booking has been confirmed. We look forward to seeing you at the table!</p>
           
           <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 25px 0;">
-            <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px;">Session Details</h3>
+            <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px;">Booking Details</h3>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td style="padding: 8px 0; color: #aaa; width: 100px;">Game:</td>
+                <td style="padding: 8px 0; color: #aaa; width: 120px;">Game:</td>
                 <td style="padding: 8px 0; font-weight: bold;">${gameName}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #aaa;">Level:</td>
+                <td style="padding: 8px 0; color: #aaa;">Category:</td>
                 <td style="padding: 8px 0; font-weight: bold;">${levelName}</td>
               </tr>
               <tr>
@@ -78,6 +109,7 @@ export class Smtp2goService {
                 <td style="padding: 8px 0; color: #aaa;">Time:</td>
                 <td style="padding: 8px 0; font-weight: bold;">${time}</td>
               </tr>
+              ${locationBlock}
             </table>
           </div>
 
@@ -96,6 +128,7 @@ export class Smtp2goService {
         
       </div>
     `;
+
 
     const apiKey = this.configService.get<string>('SMTP2GO_API_KEY');
     if (!apiKey) {

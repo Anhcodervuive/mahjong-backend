@@ -19,7 +19,10 @@ export class BookingService {
   async createBooking(data: any): Promise<{ paymentUrl: string }> {
     try {
       // 1. Create Booking in DB (Status: PENDING)
-      const session = await this.prisma.session.findUnique({ where: { id: data.sessionId } });
+      const session = await this.prisma.session.findUnique({ 
+        where: { id: data.sessionId },
+        include: { category: true }
+      });
       if (!session) throw new NotFoundException('Session not found');
 
       const serviceOption = await this.prisma.serviceOption.findUnique({ where: { id: data.serviceOptionId } });
@@ -37,6 +40,56 @@ export class BookingService {
       if (bookingDate < today) {
         throw new BadRequestException('Cannot book a session in the past');
       }
+
+      // --- SMART CHECK: Overlap & Capacity ---
+      const isSocialPlay = (session.category?.name ?? '').toLowerCase() === 'social play';
+      if (!isSocialPlay) {
+        const timeToMins = (t: string) => {
+          if (!t) return 0;
+          const [h, m] = t.split(':').map(Number);
+          return h * 60 + m;
+        };
+        const reqStartMins = timeToMins(data.startTime);
+        const reqEndMins = timeToMins(data.endTime);
+
+        const overlappingBookings = await this.prisma.booking.findMany({
+          where: {
+            bookingDate,
+            OR: [
+              { status: 'SUCCESS' },
+              { status: 'PENDING', createdAt: { gte: new Date(Date.now() - 15 * 60000) } },
+            ],
+            session: {
+              type: session.type,
+              category: {
+                name: { not: 'Social Play' }
+              }
+            }
+          },
+          include: { session: { include: { category: true } } }
+        });
+
+        const hasOverlap = overlappingBookings.some(b => {
+          if (!b.startTime || !b.endTime) return false;
+          const bStart = timeToMins(b.startTime);
+          const bEnd = timeToMins(b.endTime);
+          const overlaps = Math.max(reqStartMins, bStart) < Math.min(reqEndMins, bEnd);
+          if (!overlaps) return false;
+          if (b.sessionId === data.sessionId && b.startTime === data.startTime && b.endTime === data.endTime) return false;
+          return true;
+        });
+
+        if (hasOverlap) {
+          throw new BadRequestException('Instructor is already booked for an overlapping time slot.');
+        }
+
+        const sameSlotBookings = overlappingBookings.filter(b => b.sessionId === data.sessionId && b.startTime === data.startTime && b.endTime === data.endTime);
+        const bookedCount = sameSlotBookings.reduce((sum, b) => sum + (b.quantity || 1), 0);
+        if (bookedCount + data.participants.length > session.maxPlayers) {
+          throw new BadRequestException('Not enough capacity for this time slot.');
+        }
+      }
+      // ---------------------------------------
 
       const booking = await this.prisma.booking.create({
         data: {
@@ -103,7 +156,7 @@ export class BookingService {
     try {
       const payment = await this.prisma.payment.findUnique({
         where: { transactionId: orderReference },
-        include: { booking: { include: { session: { include: { category: { include: { game: true } } } }, participants: true } } },
+        include: { booking: { include: { session: { include: { category: { include: { game: true } } } }, participants: true, location: true } } },
       });
 
       if (!payment) throw new NotFoundException('Payment record not found');
