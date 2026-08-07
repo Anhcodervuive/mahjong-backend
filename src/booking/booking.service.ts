@@ -120,7 +120,7 @@ export class BookingService {
 
       // 2. Generate Payment Link via N-Genius
       const amountInMinorUnits = Math.round(totalAmount * 100);
-      const redirectUrl = `${process.env.FRONTEND_URL || 'http://127.0.0.1:5174'}/payment/callback`;
+      const redirectUrl = `${process.env.FRONTEND_URL || 'http://127.0.0.1:5174'}/payment/callback?source=${encodeURIComponent(data.source || '/book-session')}`;
       console.log('Sending redirectUrl to N-Genius:', redirectUrl);
 
       const { orderReference, paymentLink } = await this.paymentService.createOrder(
