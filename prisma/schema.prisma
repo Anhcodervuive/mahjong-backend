@@ -169,7 +169,7 @@ model Location {
   address     String?
   mapUrl      String?
   price       Decimal @default(0) @db.Decimal(10, 2)
-  parking     String? // e.g., "Free parking available"
+  parking     String? @map("daysAndTime") // Keep db column as daysAndTime to prevent data loss
   order       Int     @default(0)
   isDeleted   Boolean @default(false)
 
