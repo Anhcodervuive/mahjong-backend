@@ -8,8 +8,12 @@ import { Roles } from '../auth/roles.decorator';
 export class AvailabilityController {
   constructor(private readonly service: AvailabilityService) {}
   @Get()
-  getAvailability(@Query('year') year: string, @Query('month') month: string) {
-    return this.service.getAvailabilityForMonth(+year, +month);
+  getAvailability(
+    @Query('year') year: string, 
+    @Query('month') month: string,
+    @Query('sessionId') sessionId?: string
+  ) {
+    return this.service.getAvailabilityForMonth(+year, +month, sessionId ? +sessionId : undefined);
   }
 
   @Get('guided-games')

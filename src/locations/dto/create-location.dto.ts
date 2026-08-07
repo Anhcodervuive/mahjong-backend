@@ -25,7 +25,7 @@ export class CreateLocationDto {
 
   @IsString()
   @IsOptional()
-  daysAndTime?: string;
+  parking?: string;
 
   @IsOptional()
   schedules?: {

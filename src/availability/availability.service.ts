@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 export class AvailabilityService {
   constructor(private prisma: PrismaService) {}
 
-  async getAvailabilityForMonth(year: number, month: number) {
+  async getAvailabilityForMonth(year: number, month: number, sessionId?: number) {
     const startDate = dayjs(`${year}-${month}-01`).startOf('month');
     const endDate = startDate.endOf('month');
     const daysInMonth = startDate.daysInMonth();
@@ -33,10 +33,7 @@ export class AvailabilityService {
         OR: [
           { status: 'SUCCESS' },
           { status: 'PENDING', createdAt: { gte: fifteenMinsAgo } }
-        ],
-        session: {
-          type: 'TRAINING'
-        }
+        ]
       },
       include: { session: { include: { category: true } } },
     });
@@ -115,12 +112,13 @@ export class AvailabilityService {
           return Math.max(tsStartMins, bStart) < Math.min(tsEndMins, bEnd);
         });
 
-        // Check if instructor is busy with a DIFFERENT time slot
+        // Check if instructor is busy with a DIFFERENT time slot or DIFFERENT session
         const instructorBusy = overlappingBookings.some((b) => {
           const catName = (b.session?.category?.name ?? '').toLowerCase();
           if (catName === 'social play') return false; 
-          if (b.startTime === slotStart && b.endTime === slotEnd) return false; 
-          return true; // Overlaps but doesn't exactly match the slot time -> instructor is blocked
+          
+          if (sessionId && b.sessionId === sessionId && b.startTime === slotStart && b.endTime === slotEnd) return false; 
+          return true; // Overlaps -> instructor is blocked
         });
 
         let remaining = 0;
@@ -190,10 +188,7 @@ export class AvailabilityService {
         OR: [
           { status: 'SUCCESS' },
           { status: 'PENDING', createdAt: { gte: fifteenMinsAgo } },
-        ],
-        session: {
-          type: 'GUIDED_GAME'
-        }
+        ]
       },
       include: { session: { include: { category: true } } },
     });
