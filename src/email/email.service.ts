@@ -1,18 +1,46 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
+
+export interface EmailTemplateConfig {
+  headerTitle?: string;
+  confirmationTitle?: string;
+  introText?: string;
+  detailsTitle?: string;
+  newUserTitle?: string;
+  newUserIntro?: string;
+  existingUserIntro?: string;
+  buttonText?: string;
+  footerText?: string;
+}
+
+const DEFAULT_EMAIL_CONFIG: Required<EmailTemplateConfig> = {
+  headerTitle: 'Mahjong Success',
+  confirmationTitle: 'Booking Confirmed! 🎉',
+  introText: "Your seat for the upcoming Mahjong session has been successfully booked. We can't wait to see you at the table!",
+  detailsTitle: 'Session Details',
+  newUserTitle: 'Your Account Details',
+  newUserIntro: 'An account has been automatically created for you to manage your bookings.',
+  existingUserIntro: 'You can view and manage your booking by logging into your existing Mahjong Success account.',
+  buttonText: 'LOG IN TO ACCOUNT',
+  footerText: 'This is an automated message, please do not reply.',
+};
 
 @Injectable()
 export class EmailService {
   private transporter: nodemailer.Transporter;
   private readonly logger = new Logger(EmailService.name);
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+  ) {
     const port = parseInt(this.configService.get<string>('SMTP_PORT') as string, 10) || 465;
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
       port: port,
-      secure: port === 465, // Use SSL for port 465, STARTTLS for 587
+      secure: port === 465,
       auth: {
         user: this.configService.get<string>('SMTP_USER'),
         pass: this.configService.get<string>('SMTP_PASS'),
@@ -22,6 +50,31 @@ export class EmailService {
     });
   }
 
+  private async getEmailConfig(): Promise<Required<EmailTemplateConfig>> {
+    try {
+      const setting = await this.prisma.setting.findUnique({
+        where: { key: 'EMAIL_TEMPLATE_CONFIG' },
+      });
+      if (setting && setting.value) {
+        const parsed = JSON.parse(setting.value);
+        return {
+          headerTitle: parsed.headerTitle || DEFAULT_EMAIL_CONFIG.headerTitle,
+          confirmationTitle: parsed.confirmationTitle || DEFAULT_EMAIL_CONFIG.confirmationTitle,
+          introText: parsed.introText || DEFAULT_EMAIL_CONFIG.introText,
+          detailsTitle: parsed.detailsTitle || DEFAULT_EMAIL_CONFIG.detailsTitle,
+          newUserTitle: parsed.newUserTitle || DEFAULT_EMAIL_CONFIG.newUserTitle,
+          newUserIntro: parsed.newUserIntro || DEFAULT_EMAIL_CONFIG.newUserIntro,
+          existingUserIntro: parsed.existingUserIntro || DEFAULT_EMAIL_CONFIG.existingUserIntro,
+          buttonText: parsed.buttonText || DEFAULT_EMAIL_CONFIG.buttonText,
+          footerText: parsed.footerText || DEFAULT_EMAIL_CONFIG.footerText,
+        };
+      }
+    } catch (e) {
+      this.logger.error('Failed to load EMAIL_TEMPLATE_CONFIG setting, using defaults', e);
+    }
+    return DEFAULT_EMAIL_CONFIG;
+  }
+
   async sendBookingConfirmation(
     email: string,
     fullName: string,
@@ -29,30 +82,33 @@ export class EmailService {
     plainPassword?: string,
     bookingDetails?: any,
   ) {
+    const config = await this.getEmailConfig();
     const sessionName = bookingDetails?.session?.title || 'Mahjong Session';
     const gameName = bookingDetails?.session?.category?.game?.name || 'Mahjong';
     const levelName = bookingDetails?.session?.category?.name || 'Session';
-    const date = new Date(bookingDetails?.bookingDate).toLocaleDateString('en-GB', {
+    const date = new Date(bookingDetails?.bookingDate || Date.now()).toLocaleDateString('en-GB', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-    const time = `${bookingDetails?.startTime} - ${bookingDetails?.endTime}`;
+    const time = bookingDetails?.startTime && bookingDetails?.endTime
+      ? `${bookingDetails.startTime} - ${bookingDetails.endTime}`
+      : '10:00 AM - 12:00 PM';
 
     const loginSection = isNewUser
       ? `
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #D4AF6A;">
-          <h3 style="color: #071F1B; margin-top: 0;">Your Account Details</h3>
-          <p style="color: #333; margin-bottom: 10px;">An account has been automatically created for you to manage your bookings.</p>
+          <h3 style="color: #071F1B; margin-top: 0;">${config.newUserTitle}</h3>
+          <p style="color: #333; margin-bottom: 10px;">${config.newUserIntro}</p>
           <p style="margin: 5px 0;"><strong>Username / Email:</strong> ${email}</p>
-          <p style="margin: 5px 0;"><strong>Password:</strong> ${plainPassword}</p>
+          <p style="margin: 5px 0;"><strong>Password:</strong> ${plainPassword || '••••••••'}</p>
           <p style="color: #666; font-size: 13px; margin-top: 15px;">Please log in to change your password as soon as possible.</p>
         </div>
       `
       : `
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #071F1B;">
-          <p style="color: #333; margin: 0;">You can view and manage your booking by logging into your existing Mahjong Success account.</p>
+          <p style="color: #333; margin: 0;">${config.existingUserIntro}</p>
         </div>
       `;
 
@@ -61,17 +117,17 @@ export class EmailService {
         
         <!-- Header -->
         <div style="background-color: #071F1B; padding: 30px; text-align: center;">
-          <h1 style="color: #D4AF6A; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Mahjong Success</h1>
+          <h1 style="color: #D4AF6A; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">${config.headerTitle}</h1>
         </div>
         
         <!-- Body -->
         <div style="padding: 40px 30px;">
-          <h2 style="color: #071F1B; margin-top: 0;">Booking Confirmed!</h2>
+          <h2 style="color: #071F1B; margin-top: 0;">${config.confirmationTitle}</h2>
           <p style="color: #444; font-size: 16px; line-height: 1.6;">Hello <strong>${fullName}</strong>,</p>
-          <p style="color: #444; font-size: 16px; line-height: 1.6;">Your seat for the upcoming Mahjong session has been successfully booked. We can't wait to see you at the table!</p>
+          <p style="color: #444; font-size: 16px; line-height: 1.6;">${config.introText}</p>
           
           <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 25px 0;">
-            <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px;">Session Details</h3>
+            <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px;">${config.detailsTitle}</h3>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0; color: #aaa; width: 100px;">Game:</td>
@@ -99,14 +155,14 @@ export class EmailService {
           ${loginSection}
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${this.configService.get<string>('FRONTEND_URL') || 'https://mahjong-success.com'}/login" style="display: inline-block; background-color: #D4AF6A; color: #071F1B; text-decoration: none; font-weight: bold; padding: 12px 30px; border-radius: 30px; text-transform: uppercase; font-size: 14px; letter-spacing: 1px;">Log In to Account</a>
+            <a href="${this.configService.get<string>('FRONTEND_URL') || 'https://mahjong-success.com'}/login" style="display: inline-block; background-color: #D4AF6A; color: #071F1B; text-decoration: none; font-weight: bold; padding: 12px 30px; border-radius: 30px; text-transform: uppercase; font-size: 14px; letter-spacing: 1px;">${config.buttonText}</a>
           </div>
         </div>
         
         <!-- Footer -->
         <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #888;">
-          <p style="margin: 0;">&copy; ${new Date().getFullYear()} Mahjong Success. All rights reserved.</p>
-          <p style="margin: 5px 0 0;">This is an automated message, please do not reply.</p>
+          <p style="margin: 0;">&copy; ${new Date().getFullYear()} ${config.headerTitle}. All rights reserved.</p>
+          <p style="margin: 5px 0 0;">${config.footerText}</p>
         </div>
         
       </div>
@@ -116,13 +172,37 @@ export class EmailService {
       await this.transporter.sendMail({
         from: '"Mahjong Success" <' + this.configService.get<string>('SMTP_USER') + '>',
         to: email,
-        subject: 'Your Mahjong Session Booking is Confirmed!',
+        subject: config.confirmationTitle,
         html: htmlContent,
       });
       this.logger.log(`Booking confirmation email sent to ${email}`);
     } catch (error) {
       this.logger.error(`Failed to send email to ${email}`, error);
     }
+  }
+
+  async sendTestEmail(email: string, isNewUser: boolean = true) {
+    const dummyBooking = {
+      bookingDate: new Date(),
+      startTime: '10:00 AM',
+      endTime: '12:00 PM',
+      session: {
+        title: 'Beginner Hand Building Workshop',
+        category: {
+          name: 'Guided Games',
+          game: {
+            name: 'Taiwanese Mahjong',
+          },
+        },
+      },
+    };
+    await this.sendBookingConfirmation(
+      email,
+      'Sample User',
+      isNewUser,
+      isNewUser ? 'Pass1234!' : undefined,
+      dummyBooking,
+    );
   }
 
   async sendJoinCircleAdminNotification(request: any) {
