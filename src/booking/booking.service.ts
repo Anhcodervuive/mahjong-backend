@@ -240,7 +240,7 @@ export class BookingService {
       }
 
       // Send email
-      await this.smtp2goService.sendBookingConfirmation(
+      await this.emailService.sendBookingConfirmation(
         p.email,
         user.name,
         isNewUser,
