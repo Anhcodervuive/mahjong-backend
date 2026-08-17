@@ -52,6 +52,10 @@ export class CreateJoinCircleDto {
 
   @IsString()
   @IsOptional()
+  friendName?: string;
+
+  @IsString()
+  @IsOptional()
   friendEmail?: string;
 
   @IsString()

@@ -343,6 +343,7 @@ model JoinCircleRequest {
   times       String[]
   groupSize   String
   message     String?
+  friendName  String?
   friendEmail String?
   friendPhone String?
 

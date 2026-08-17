@@ -24,6 +24,7 @@ export class JoinCircleService {
         times: createDto.times,
         groupSize: createDto.groupSize,
         message: createDto.message,
+        friendName: createDto.friendName,
         friendEmail: createDto.friendEmail,
         friendPhone: createDto.friendPhone,
         locations: createDto.locationIds && createDto.locationIds.length > 0
