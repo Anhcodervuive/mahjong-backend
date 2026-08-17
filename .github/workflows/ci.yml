@@ -1,0 +1,47 @@
+name: CI — Backend (NestJS)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+      - deploy
+
+jobs:
+  ci:
+    name: Lint • TypeCheck • Build • Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Lint
+        run: npm run lint
+
+      - name: 🏗️ Generate Prisma Client
+        run: npx prisma generate
+        env:
+          # Mock DATABASE_URL — chỉ cần để prisma generate không lỗi
+          DATABASE_URL: postgresql://mock:mock@localhost:5432/mock?schema=public
+
+      - name: 🔨 Build (TypeScript compile)
+        run: npx nest build
+
+      - name: 🧪 Unit Tests
+        run: npm run test -- --passWithNoTests --forceExit
+        env:
+          DATABASE_URL: postgresql://mock:mock@localhost:5432/mock?schema=public
+          JWT_SECRET: ci-mock-jwt-secret
+          PORT: 4000
