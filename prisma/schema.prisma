@@ -251,6 +251,8 @@ model Booking {
   sessionId       Int
   serviceOptionId Int
   locationId      Int?
+  notes           String?
+  level           String?
 
   bookingDate DateTime @db.Date
   startTime   String // e.g. "10:00"

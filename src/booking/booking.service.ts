@@ -96,6 +96,8 @@ export class BookingService {
           sessionId: data.sessionId,
           serviceOptionId: data.serviceOptionId,
           locationId: data.locationId || null,
+          notes: data.notes || null,
+          level: data.level || null,
           bookingDate,
           startTime: data.startTime,
           endTime: data.endTime,
