@@ -15,6 +15,26 @@ export interface EmailTemplateConfig {
   footerText?: string;
 }
 
+export interface JoinCircleEmailConfig {
+  headerTitle?: string;
+  subjectTitle?: string;
+  introText?: string;
+  preferencesTitle?: string;
+  nextStepsTitle?: string;
+  nextStepsText?: string;
+  footerText?: string;
+}
+
+export interface ContactUsEmailConfig {
+  headerTitle?: string;
+  subjectTitle?: string;
+  introText?: string;
+  enquiryTitle?: string;
+  followUpNote?: string;
+  quickLinksTitle?: string;
+  footerText?: string;
+}
+
 const DEFAULT_EMAIL_CONFIG: Required<EmailTemplateConfig> = {
   headerTitle: 'Mahjong Success',
   confirmationTitle: 'Booking Confirmed! 🎉',
@@ -24,6 +44,26 @@ const DEFAULT_EMAIL_CONFIG: Required<EmailTemplateConfig> = {
   newUserIntro: 'An account has been automatically created for you to manage your bookings.',
   existingUserIntro: 'You can view and manage your booking by logging into your existing Mahjong Success account.',
   buttonText: 'LOG IN TO ACCOUNT',
+  footerText: 'This is an automated message, please do not reply.',
+};
+
+const DEFAULT_JOIN_CIRCLE_CONFIG: Required<JoinCircleEmailConfig> = {
+  headerTitle: 'Mahjong Success',
+  subjectTitle: "We've Received Your Join Circle Request! 🀄",
+  introText: 'Thank you for registering to join the Mahjong Success Circle. We have received your preferences and details.',
+  preferencesTitle: 'Your Circle Preferences',
+  nextStepsTitle: 'What Happens Next',
+  nextStepsText: 'Our team will match you with players at a similar skill level and preferred location within 24–48 hours. Once a table of 4 is formed, we will reach out with your confirmed session details.',
+  footerText: 'This is an automated message, please do not reply.',
+};
+
+const DEFAULT_CONTACT_US_CONFIG: Required<ContactUsEmailConfig> = {
+  headerTitle: 'Mahjong Success',
+  subjectTitle: 'Thank You for Contacting Mahjong Success',
+  introText: 'Thank you for reaching out to us. We have received your enquiry and our team will get back to you shortly.',
+  enquiryTitle: 'Enquiry Summary',
+  followUpNote: 'Our team will review your message and reply within 2 working days.',
+  quickLinksTitle: 'Explore Mahjong Success',
   footerText: 'This is an automated message, please do not reply.',
 };
 
@@ -73,6 +113,52 @@ export class EmailService {
       this.logger.error('Failed to load EMAIL_TEMPLATE_CONFIG setting, using defaults', e);
     }
     return DEFAULT_EMAIL_CONFIG;
+  }
+
+  private async getJoinCircleEmailConfig(): Promise<Required<JoinCircleEmailConfig>> {
+    try {
+      const setting = await this.prisma.setting.findUnique({
+        where: { key: 'EMAIL_TEMPLATE_JOIN_CIRCLE' },
+      });
+      if (setting && setting.value) {
+        const parsed = JSON.parse(setting.value);
+        return {
+          headerTitle: parsed.headerTitle || DEFAULT_JOIN_CIRCLE_CONFIG.headerTitle,
+          subjectTitle: parsed.subjectTitle || DEFAULT_JOIN_CIRCLE_CONFIG.subjectTitle,
+          introText: parsed.introText || DEFAULT_JOIN_CIRCLE_CONFIG.introText,
+          preferencesTitle: parsed.preferencesTitle || DEFAULT_JOIN_CIRCLE_CONFIG.preferencesTitle,
+          nextStepsTitle: parsed.nextStepsTitle || DEFAULT_JOIN_CIRCLE_CONFIG.nextStepsTitle,
+          nextStepsText: parsed.nextStepsText || DEFAULT_JOIN_CIRCLE_CONFIG.nextStepsText,
+          footerText: parsed.footerText || DEFAULT_JOIN_CIRCLE_CONFIG.footerText,
+        };
+      }
+    } catch (e) {
+      this.logger.error('Failed to load EMAIL_TEMPLATE_JOIN_CIRCLE setting, using defaults', e);
+    }
+    return DEFAULT_JOIN_CIRCLE_CONFIG;
+  }
+
+  private async getContactUsEmailConfig(): Promise<Required<ContactUsEmailConfig>> {
+    try {
+      const setting = await this.prisma.setting.findUnique({
+        where: { key: 'EMAIL_TEMPLATE_CONTACT_US' },
+      });
+      if (setting && setting.value) {
+        const parsed = JSON.parse(setting.value);
+        return {
+          headerTitle: parsed.headerTitle || DEFAULT_CONTACT_US_CONFIG.headerTitle,
+          subjectTitle: parsed.subjectTitle || DEFAULT_CONTACT_US_CONFIG.subjectTitle,
+          introText: parsed.introText || DEFAULT_CONTACT_US_CONFIG.introText,
+          enquiryTitle: parsed.enquiryTitle || DEFAULT_CONTACT_US_CONFIG.enquiryTitle,
+          followUpNote: parsed.followUpNote || DEFAULT_CONTACT_US_CONFIG.followUpNote,
+          quickLinksTitle: parsed.quickLinksTitle || DEFAULT_CONTACT_US_CONFIG.quickLinksTitle,
+          footerText: parsed.footerText || DEFAULT_CONTACT_US_CONFIG.footerText,
+        };
+      }
+    } catch (e) {
+      this.logger.error('Failed to load EMAIL_TEMPLATE_CONTACT_US setting, using defaults', e);
+    }
+    return DEFAULT_CONTACT_US_CONFIG;
   }
 
   async sendBookingConfirmation(
@@ -290,32 +376,195 @@ export class EmailService {
     }
   }
 
-  async sendTestEmail(email: string, isNewUser: boolean = true) {
+  async sendTestEmail(email: string, templateType: 'booking' | 'join-circle' | 'contact-us' = 'booking', isNewUser: boolean = true) {
+    if (templateType === 'join-circle') {
+      const dummyRequest = {
+        firstName: 'Sample',
+        lastName: 'Player',
+        email: email,
+        phone: '+971 50 123 4567',
+        level: 'Foundation',
+        ageGroup: '18–29 years',
+        groupSize: 2,
+        days: ['Tuesday', 'Saturday'],
+        times: ['1:00 PM – 4:00 PM'],
+        friendName: 'Friend Player',
+        friendEmail: 'friend@example.com',
+        friendPhone: '+971 50 765 4321',
+        message: 'Looking forward to meeting new Mahjong players!',
+        game: { name: 'Taiwanese Mahjong' },
+        locations: [{ name: 'Dubai Hills' }, { name: 'Barsha' }],
+      };
+      await this.sendJoinCircleCustomerConfirmation(email, 'Sample Player', dummyRequest);
+      return;
+    }
+
+    if (templateType === 'contact-us') {
+      const dummyContact = {
+        name: 'Sample Customer',
+        email: email,
+        phone: '+971 50 123 4567',
+        subject: 'Corporate Events (The Thinking Table)',
+        message: 'Hello, we would like to enquire about organising a Mahjong corporate event for 20 colleagues next month. Please share available packages.',
+      };
+      await this.sendContactCustomerAutoReply(dummyContact);
+      return;
+    }
+
+    // Default: booking
     const dummyBooking = {
       bookingDate: new Date(),
       startTime: '10:00 AM',
       endTime: '12:00 PM',
+      totalAmount: 300,
+      level: 'Beginners',
+      notes: 'Looking forward to our first session together!',
+      serviceOption: { name: 'Regular' },
       session: {
-        title: 'Beginner Hand Building Workshop',
+        title: '2 Hours Game Session',
         category: {
-          name: 'Guided Games',
+          name: 'Guided Games / Social Play',
           game: {
             name: 'Taiwanese Mahjong',
           },
         },
       },
+      location: {
+        name: 'Dubai Hills',
+        description: "Tasha's Teahouse",
+        address: 'Maple 1, Villa 611, Dubai Hills, Dubai',
+        mapUrl: 'https://maps.google.com',
+      },
+      participants: [
+        { fullName: 'Sample Customer', email: email, phone: '+971 50 123 4567', ageGroup: { name: '18–29 yrs' }, isOwner: true },
+        { fullName: 'Guest Player', email: 'friend@example.com', phone: '+971 50 765 4321', ageGroup: { name: '18–29 yrs' }, isOwner: false },
+      ],
     };
     await this.sendBookingConfirmation(
       email,
-      'Sample User',
+      'Sample Customer',
       isNewUser,
       isNewUser ? 'Pass1234!' : undefined,
       dummyBooking,
     );
   }
 
+  async sendJoinCircleCustomerConfirmation(email: string, fullName: string, request: any) {
+    const config = await this.getJoinCircleEmailConfig();
+    const gameName = request.game?.name || 'Mahjong';
+    const level = request.level || 'Foundation';
+    const ageGroup = request.ageGroup || 'General';
+    const groupSize = request.groupSize || 1;
+    const days = Array.isArray(request.days) ? request.days.join(', ') : (request.days || 'Flexible');
+    const times = Array.isArray(request.times) ? request.times.join(', ') : (request.times || 'Flexible');
+    const locations = request.locations && request.locations.length > 0
+      ? request.locations.map((l: any) => l.name).join(', ')
+      : 'Flexible';
+
+    const friendInfoHtml = request.friendEmail || request.friendName ? `
+      <tr>
+        <td style="padding: 6px 0; color: #aaa;">Friend Joining:</td>
+        <td style="padding: 6px 0; font-weight: bold;">
+          ${request.friendName || 'Friend'} ${request.friendEmail ? `(${request.friendEmail})` : ''} ${request.friendPhone ? ` - ${request.friendPhone}` : ''}
+        </td>
+      </tr>
+    ` : '';
+
+    const messageHtml = request.message ? `
+      <div style="background-color: #fdfaf3; border: 1px solid #e8dec8; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 13px;">
+        <strong style="color: #071F1B;">📝 Your Notes / Message:</strong>
+        <p style="margin: 5px 0 0; color: #555;">${request.message}</p>
+      </div>
+    ` : '';
+
+    const htmlContent = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+        
+        <!-- Header -->
+        <div style="background-color: #071F1B; padding: 30px; text-align: center;">
+          <h1 style="color: #D4AF6A; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">${config.headerTitle}</h1>
+          <p style="color: rgba(212,175,106,0.7); margin: 8px 0 0; font-size: 13px;">Mahjong Success Circle</p>
+        </div>
+        
+        <!-- Body -->
+        <div style="padding: 40px 30px;">
+          <h2 style="color: #071F1B; margin-top: 0;">${config.subjectTitle}</h2>
+          <p style="color: #444; font-size: 16px; line-height: 1.6;">Hello <strong>${fullName}</strong>,</p>
+          <p style="color: #444; font-size: 16px; line-height: 1.6;">${config.introText}</p>
+          
+          <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 25px 0;">
+            <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+              ${config.preferencesTitle}
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <tr>
+                <td style="padding: 6px 0; color: #aaa; width: 140px;">Selected Game:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${gameName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Skill Level:</td>
+                <td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">${level}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Age Group:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${ageGroup}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Preferred Area(s):</td>
+                <td style="padding: 6px 0; font-weight: bold;">${locations}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Available Days:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${days}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Available Times:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${times}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Group Size:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${groupSize} Player(s)</td>
+              </tr>
+              ${friendInfoHtml}
+            </table>
+          </div>
+
+          ${messageHtml}
+
+          <!-- Next Steps Box -->
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #D4AF6A;">
+            <h3 style="color: #071F1B; margin-top: 0; font-size: 15px;">${config.nextStepsTitle}</h3>
+            <p style="color: #444; font-size: 14px; line-height: 1.6; margin-bottom: 0;">${config.nextStepsText}</p>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #888;">
+          <p style="margin: 0;">&copy; ${new Date().getFullYear()} ${config.headerTitle}. All rights reserved.</p>
+          <p style="margin: 5px 0 0;">${config.footerText}</p>
+        </div>
+        
+      </div>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: '"Mahjong Success" <' + this.configService.get<string>('SMTP_USER') + '>',
+        to: email,
+        subject: config.subjectTitle,
+        html: htmlContent,
+      });
+      this.logger.log(`Join circle customer confirmation email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send join circle customer confirmation to ${email}`, error);
+    }
+  }
+
   async sendJoinCircleAdminNotification(request: any) {
     const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || this.configService.get<string>('SMTP_USER');
+    const locations = request.locations && request.locations.length > 0
+      ? request.locations.map((l: any) => l.name).join(', ')
+      : 'Flexible';
     
     const htmlContent = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -328,13 +577,13 @@ export class EmailService {
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Game:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.game?.name || 'N/A'}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Level:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.level}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Age Group:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.ageGroup}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Days:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.days.join(', ')}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Times:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.times.join(', ')}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Locations:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${locations}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Days:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${Array.isArray(request.days) ? request.days.join(', ') : request.days}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Times:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${Array.isArray(request.times) ? request.times.join(', ') : request.times}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Group Size:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.groupSize}</td></tr>
         </table>
+        ${request.friendName || request.friendEmail ? `<p><strong>Friend:</strong> ${request.friendName || ''} (${request.friendEmail || ''} - ${request.friendPhone || ''})</p>` : ''}
         ${request.message ? `<p><strong>Message:</strong><br>${request.message}</p>` : ''}
-        ${request.friendEmail ? `<p><strong>Friend Email:</strong> ${request.friendEmail}</p>` : ''}
-        ${request.friendPhone ? `<p><strong>Friend Phone:</strong> ${request.friendPhone}</p>` : ''}
         
         <p style="margin-top: 20px;">Please check the admin panel for more details.</p>
       </div>
@@ -350,6 +599,127 @@ export class EmailService {
       this.logger.log(`Join circle notification sent to ${adminEmail}`);
     } catch (error) {
       this.logger.error(`Failed to send join circle notification to ${adminEmail}`, error);
+    }
+  }
+
+  async sendContactCustomerAutoReply(contact: { name: string; email: string; subject: string; message: string; phone?: string }) {
+    const config = await this.getContactUsEmailConfig();
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://mahjong-success.com';
+
+    const htmlContent = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+        
+        <!-- Header -->
+        <div style="background-color: #071F1B; padding: 30px; text-align: center;">
+          <h1 style="color: #D4AF6A; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">${config.headerTitle}</h1>
+          <p style="color: rgba(212,175,106,0.7); margin: 8px 0 0; font-size: 13px;">Customer Care</p>
+        </div>
+        
+        <!-- Body -->
+        <div style="padding: 40px 30px;">
+          <h2 style="color: #071F1B; margin-top: 0;">${config.subjectTitle}</h2>
+          <p style="color: #444; font-size: 16px; line-height: 1.6;">Hello <strong>${contact.name}</strong>,</p>
+          <p style="color: #444; font-size: 16px; line-height: 1.6;">${config.introText}</p>
+          
+          <!-- Summary Box -->
+          <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 25px 0;">
+            <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+              ${config.enquiryTitle}
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <tr>
+                <td style="padding: 6px 0; color: #aaa; width: 120px;">Subject:</td>
+                <td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">${contact.subject}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Name:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${contact.name}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Email:</td>
+                <td style="padding: 6px 0;">${contact.email}</td>
+              </tr>
+              ${contact.phone ? `<tr><td style="padding: 6px 0; color: #aaa;">Phone:</td><td style="padding: 6px 0;">${contact.phone}</td></tr>` : ''}
+            </table>
+            
+            <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+              <p style="color: #aaa; margin: 0 0 5px 0; font-size: 12px;">Your Message:</p>
+              <p style="color: #fff; margin: 0; font-style: italic; line-height: 1.5;">&ldquo;${contact.message}&rdquo;</p>
+            </div>
+          </div>
+
+          <!-- Follow-up Notice Box -->
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #D4AF6A;">
+            <p style="color: #071F1B; font-size: 14px; line-height: 1.6; margin: 0; font-weight: 500;">
+              ⏳ ${config.followUpNote}
+            </p>
+          </div>
+
+          <!-- Quick Links Section -->
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+            <p style="color: #777; font-size: 13px; margin-bottom: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
+              ${config.quickLinksTitle}
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+              <a href="${frontendUrl}/guided-games" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">Guided Games</a>
+              <a href="${frontendUrl}/fast-track-bundles" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">Fast Track Bundles</a>
+              <a href="${frontendUrl}/faq" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">FAQs</a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #888;">
+          <p style="margin: 0;">&copy; ${new Date().getFullYear()} ${config.headerTitle}. All rights reserved.</p>
+          <p style="margin: 5px 0 0;">${config.footerText}</p>
+        </div>
+        
+      </div>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: '"Mahjong Success" <' + this.configService.get<string>('SMTP_USER') + '>',
+        to: contact.email,
+        subject: config.subjectTitle,
+        html: htmlContent,
+      });
+      this.logger.log(`Contact customer auto-reply email sent to ${contact.email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send contact auto-reply to ${contact.email}`, error);
+    }
+  }
+
+  async sendContactAdminNotification(contact: { name: string; email: string; subject: string; message: string; phone?: string }) {
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || this.configService.get<string>('SMTP_USER');
+    
+    const htmlContent = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #071F1B;">New Contact Us Enquiry</h2>
+        <p>A new enquiry has been submitted through the website contact form.</p>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee; width: 120px;"><strong>Subject:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #891A1A; font-weight: bold;">${contact.subject}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Name:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${contact.name}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Email:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><a href="mailto:${contact.email}">${contact.email}</a></td></tr>
+          ${contact.phone ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${contact.phone}</td></tr>` : ''}
+        </table>
+        <div style="margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #071F1B;">
+          <p style="margin: 0 0 5px 0; font-weight: bold; color: #333;">Message:</p>
+          <p style="margin: 0; color: #555; white-space: pre-wrap;">${contact.message}</p>
+        </div>
+      </div>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: '"Mahjong Success" <' + this.configService.get<string>('SMTP_USER') + '>',
+        to: adminEmail,
+        subject: `New Enquiry: ${contact.subject} (from ${contact.name})`,
+        html: htmlContent,
+      });
+      this.logger.log(`Contact admin notification sent to ${adminEmail}`);
+    } catch (error) {
+      this.logger.error(`Failed to send contact admin notification to ${adminEmail}`, error);
     }
   }
 }

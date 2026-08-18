@@ -11,8 +11,8 @@ export class EmailController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post('send-test')
-  async sendTestEmail(@Body() body: { email: string; isNewUser?: boolean }) {
-    await this.emailService.sendTestEmail(body.email, body.isNewUser);
-    return { success: true, message: `Test email sent to ${body.email}` };
+  async sendTestEmail(@Body() body: { email: string; templateType?: 'booking' | 'join-circle' | 'contact-us'; isNewUser?: boolean }) {
+    await this.emailService.sendTestEmail(body.email, body.templateType || 'booking', body.isNewUser);
+    return { success: true, message: `Test email (${body.templateType || 'booking'}) sent to ${body.email}` };
   }
 }

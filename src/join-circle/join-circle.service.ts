@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJoinCircleDto } from './dto/create-join-circle.dto';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class JoinCircleService {
@@ -8,6 +9,7 @@ export class JoinCircleService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(createDto: CreateJoinCircleDto) {
@@ -38,6 +40,20 @@ export class JoinCircleService {
         locations: true,
       }
     });
+
+    // Send customer confirmation & admin notification asynchronously
+    Promise.all([
+      this.emailService.sendJoinCircleAdminNotification(request).catch(e => 
+        this.logger.error('Failed to send join circle admin notification', e)
+      ),
+      this.emailService.sendJoinCircleCustomerConfirmation(
+        request.email,
+        `${request.firstName} ${request.lastName}`.trim(),
+        request
+      ).catch(e =>
+        this.logger.error(`Failed to send join circle customer confirmation to ${request.email}`, e)
+      ),
+    ]);
 
     return request;
   }
