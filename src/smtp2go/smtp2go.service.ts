@@ -16,11 +16,15 @@ export class Smtp2goService {
   ) {
     const sessionName = bookingDetails?.session?.title || 'Mahjong Session';
     const gameName = bookingDetails?.session?.category?.game?.name || 'Mahjong';
-    const levelName = bookingDetails?.session?.category?.name || 'Session';
+    const categoryName = bookingDetails?.session?.category?.name || 'Session';
+    const skillLevel = bookingDetails?.level;
+    const serviceOptionName = bookingDetails?.serviceOption?.name;
+    const totalAmount = bookingDetails?.totalAmount ? Number(bookingDetails.totalAmount).toFixed(2) : (bookingDetails?.unitPrice ? Number(bookingDetails.unitPrice).toFixed(2) : '0.00');
+    const notes = bookingDetails?.notes;
     const bookingType = bookingDetails?.session?.type || 'TRAINING';
     const isGuidedGame = bookingType === 'GUIDED_GAME';
 
-    const date = new Date(bookingDetails?.bookingDate).toLocaleDateString('en-GB', {
+    const date = new Date(bookingDetails?.bookingDate || Date.now()).toLocaleDateString('en-GB', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -29,29 +33,72 @@ export class Smtp2goService {
 
     const formatTime = (t: string) => {
       if (!t) return '';
+      if (t.includes('AM') || t.includes('PM')) return t;
       const [h, m] = t.split(':').map(Number);
       const ampm = h >= 12 ? 'PM' : 'AM';
       const hour = h % 12 === 0 ? 12 : h % 12;
-      return `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
+      return `${hour}:${(m || 0).toString().padStart(2, '0')} ${ampm}`;
     };
     const time = `${formatTime(bookingDetails?.startTime)} – ${formatTime(bookingDetails?.endTime)}`;
 
-    // --- Location block (only for Guided Game) ---
+    // --- Location / Venue block ---
     const location = bookingDetails?.location;
-    const locationBlock = (isGuidedGame && location)
+    const locationBlock = location
       ? `
         <tr>
-          <td colspan="2" style="padding: 12px 0 4px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">📍 Meeting Location</td>
+          <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Meeting Location & Venue</td>
         </tr>
         <tr>
-          <td style="padding: 4px 0; color: #aaa; width: 120px;">Area:</td>
-          <td style="padding: 4px 0; font-weight: bold;">${location.name}</td>
+          <td style="padding: 6px 0; color: #aaa; width: 130px;">Area:</td>
+          <td style="padding: 6px 0; font-weight: bold;">${location.name}</td>
         </tr>
-        ${location.description ? `<tr><td style="padding: 4px 0; color: #aaa;">Venue:</td><td style="padding: 4px 0; font-weight: bold;">${location.description}</td></tr>` : ''}
-        ${location.address ? `<tr><td style="padding: 4px 0; color: #aaa;">Address:</td><td style="padding: 4px 0;">${location.address}</td></tr>` : ''}
-        ${location.mapUrl ? `<tr><td style="padding: 4px 0; color: #aaa;">Map:</td><td style="padding: 4px 0;"><a href="${location.mapUrl}" style="color: #D4AF6A;">View on Map</a></td></tr>` : ''}
+        ${location.description ? `<tr><td style="padding: 6px 0; color: #aaa;">Venue:</td><td style="padding: 6px 0; font-weight: bold;">${location.description}</td></tr>` : ''}
+        ${location.address ? `<tr><td style="padding: 6px 0; color: #aaa;">Address:</td><td style="padding: 6px 0;">${location.address}</td></tr>` : ''}
+        ${location.parking ? `<tr><td style="padding: 6px 0; color: #aaa;">Parking:</td><td style="padding: 6px 0;">${location.parking}</td></tr>` : ''}
+        ${location.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${location.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
       `
       : '';
+
+    // Participants
+    const participants = bookingDetails?.participants || [];
+    let participantsHtml = '';
+    if (participants.length > 0) {
+      participantsHtml = `
+        <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 12px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+            👥 Players (${participants.length} Player${participants.length > 1 ? 's' : ''})
+          </h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.15); text-align: left; color: #D4AF6A;">
+                <th style="padding: 6px 4px;">Name</th>
+                <th style="padding: 6px 4px;">Email</th>
+                <th style="padding: 6px 4px;">Phone</th>
+                <th style="padding: 6px 4px;">Age Group</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${participants.map((p: any, i: number) => `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                  <td style="padding: 8px 4px; font-weight: bold; color: #fff;">${i + 1}. ${p.fullName || 'Guest'}${p.isOwner ? ' <span style="font-size:10px; color:#D4AF6A; border:1px solid #D4AF6A; padding:1px 4px; border-radius:3px; margin-left:4px;">Main</span>' : ''}</td>
+                  <td style="padding: 8px 4px; color: #bbb;">${p.email || '-'}</td>
+                  <td style="padding: 8px 4px; color: #bbb;">${p.phone || '-'}</td>
+                  <td style="padding: 8px 4px; color: #bbb;">${p.ageGroup?.name || p.ageGroup || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // Notes
+    const notesHtml = notes ? `
+      <div style="background-color: #fdfaf3; border: 1px solid #e8dec8; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 13px;">
+        <strong style="color: #071F1B;">📝 Special Notes / Requests:</strong>
+        <p style="margin: 5px 0 0; color: #555;">${notes}</p>
+      </div>
+    ` : '';
 
     const loginSection = isNewUser
       ? `
@@ -59,7 +106,7 @@ export class Smtp2goService {
           <h3 style="color: #071F1B; margin-top: 0;">Your Account Details</h3>
           <p style="color: #333; margin-bottom: 10px;">An account has been automatically created for you to manage your bookings.</p>
           <p style="margin: 5px 0;"><strong>Username / Email:</strong> ${email}</p>
-          <p style="margin: 5px 0;"><strong>Password:</strong> ${plainPassword}</p>
+          <p style="margin: 5px 0;"><strong>Password:</strong> ${plainPassword || '••••••••'}</p>
           <p style="color: #666; font-size: 13px; margin-top: 15px;">Please log in to change your password as soon as possible.</p>
         </div>
       `
@@ -69,7 +116,7 @@ export class Smtp2goService {
         </div>
       `;
 
-    const typeLabel = isGuidedGame ? '🎮 Guided Game' : '📚 Training Session';
+    const typeLabel = isGuidedGame ? '🎮 Guided Game / Social Play' : '📚 Training Session';
 
     const htmlContent = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
@@ -88,30 +135,50 @@ export class Smtp2goService {
           
           <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 25px 0;">
             <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px;">Booking Details</h3>
-            <table style="width: 100%; border-collapse: collapse;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
               <tr>
-                <td style="padding: 8px 0; color: #aaa; width: 120px;">Game:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${gameName}</td>
+                <td style="padding: 6px 0; color: #aaa; width: 130px;">Game:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${gameName}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #aaa;">Category:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${levelName}</td>
+                <td style="padding: 6px 0; color: #aaa;">Category:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${categoryName}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #aaa;">Session:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${sessionName}</td>
+                <td style="padding: 6px 0; color: #aaa;">Session:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${sessionName}</td>
+              </tr>
+              ${skillLevel ? `
+                <tr>
+                  <td style="padding: 6px 0; color: #aaa;">Skill Level:</td>
+                  <td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">${skillLevel}</td>
+                </tr>
+              ` : ''}
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Date:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${date}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #aaa;">Date:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${date}</td>
+                <td style="padding: 6px 0; color: #aaa;">Time:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${time}</td>
               </tr>
+              ${serviceOptionName ? `
+                <tr>
+                  <td style="padding: 6px 0; color: #aaa;">Experience / Service:</td>
+                  <td style="padding: 6px 0; font-weight: bold;">${serviceOptionName}</td>
+                </tr>
+              ` : ''}
               <tr>
-                <td style="padding: 8px 0; color: #aaa;">Time:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${time}</td>
+                <td style="padding: 6px 0; color: #aaa;">Total Paid:</td>
+                <td style="padding: 6px 0; font-weight: bold; color: #D4AF6A; font-size: 14px;">AED ${totalAmount} <span style="font-size:11px; color:#4ade80; font-weight:normal;">(Paid)</span></td>
               </tr>
               ${locationBlock}
             </table>
           </div>
+
+          ${participantsHtml}
+
+          ${notesHtml}
 
           ${loginSection}
 

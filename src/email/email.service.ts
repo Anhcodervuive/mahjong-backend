@@ -85,16 +85,104 @@ export class EmailService {
     const config = await this.getEmailConfig();
     const sessionName = bookingDetails?.session?.title || 'Mahjong Session';
     const gameName = bookingDetails?.session?.category?.game?.name || 'Mahjong';
-    const levelName = bookingDetails?.session?.category?.name || 'Session';
+    const categoryName = bookingDetails?.session?.category?.name || 'Session';
+    const skillLevel = bookingDetails?.level;
+    const serviceOptionName = bookingDetails?.serviceOption?.name;
+    const totalAmount = bookingDetails?.totalAmount ? Number(bookingDetails.totalAmount).toFixed(2) : (bookingDetails?.unitPrice ? Number(bookingDetails.unitPrice).toFixed(2) : '0.00');
+    const notes = bookingDetails?.notes;
+
     const date = new Date(bookingDetails?.bookingDate || Date.now()).toLocaleDateString('en-GB', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-    const time = bookingDetails?.startTime && bookingDetails?.endTime
-      ? `${bookingDetails.startTime} - ${bookingDetails.endTime}`
-      : '10:00 AM - 12:00 PM';
+
+    const formatTime = (t: string) => {
+      if (!t) return '';
+      if (t.includes('AM') || t.includes('PM')) return t;
+      const [h, m] = t.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const hour = h % 12 === 0 ? 12 : h % 12;
+      return `${hour}:${(m || 0).toString().padStart(2, '0')} ${ampm}`;
+    };
+
+    const time = (bookingDetails?.startTime && bookingDetails?.endTime)
+      ? `${formatTime(bookingDetails.startTime)} – ${formatTime(bookingDetails.endTime)}`
+      : '10:00 AM – 12:00 PM';
+
+    // Location / Venue Info
+    let venueDetailsHtml = '';
+    if (bookingDetails?.location) {
+      const loc = bookingDetails.location;
+      venueDetailsHtml = `
+        <tr>
+          <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Venue & Location</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #aaa; width: 130px;">Area:</td>
+          <td style="padding: 6px 0; font-weight: bold;">${loc.name}</td>
+        </tr>
+        ${loc.description ? `<tr><td style="padding: 6px 0; color: #aaa;">Venue:</td><td style="padding: 6px 0; font-weight: bold;">${loc.description}</td></tr>` : ''}
+        ${loc.address ? `<tr><td style="padding: 6px 0; color: #aaa;">Address:</td><td style="padding: 6px 0;">${loc.address}</td></tr>` : ''}
+        ${loc.parking ? `<tr><td style="padding: 6px 0; color: #aaa;">Parking:</td><td style="padding: 6px 0;">${loc.parking}</td></tr>` : ''}
+        ${loc.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${loc.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
+      `;
+    } else {
+      const venueSetting = await this.prisma.setting.findUnique({ where: { key: 'VENUE_DETAILS' } });
+      if (venueSetting?.value) {
+        venueDetailsHtml = `
+          <tr>
+            <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Venue Address</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #aaa; width: 130px;">Address:</td>
+            <td style="padding: 6px 0; font-weight: bold;">${venueSetting.value}</td>
+          </tr>
+        `;
+      }
+    }
+
+    // Participants
+    const participants = bookingDetails?.participants || [];
+    let participantsHtml = '';
+    if (participants.length > 0) {
+      participantsHtml = `
+        <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 12px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+            👥 Players (${participants.length} Player${participants.length > 1 ? 's' : ''})
+          </h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.15); text-align: left; color: #D4AF6A;">
+                <th style="padding: 6px 4px;">Name</th>
+                <th style="padding: 6px 4px;">Email</th>
+                <th style="padding: 6px 4px;">Phone</th>
+                <th style="padding: 6px 4px;">Age Group</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${participants.map((p: any, i: number) => `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                  <td style="padding: 8px 4px; font-weight: bold; color: #fff;">${i + 1}. ${p.fullName || 'Guest'}${p.isOwner ? ' <span style="font-size:10px; color:#D4AF6A; border:1px solid #D4AF6A; padding:1px 4px; border-radius:3px; margin-left:4px;">Main</span>' : ''}</td>
+                  <td style="padding: 8px 4px; color: #bbb;">${p.email || '-'}</td>
+                  <td style="padding: 8px 4px; color: #bbb;">${p.phone || '-'}</td>
+                  <td style="padding: 8px 4px; color: #bbb;">${p.ageGroup?.name || p.ageGroup || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // Notes
+    const notesHtml = notes ? `
+      <div style="background-color: #fdfaf3; border: 1px solid #e8dec8; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 13px;">
+        <strong style="color: #071F1B;">📝 Special Notes / Requests:</strong>
+        <p style="margin: 5px 0 0; color: #555;">${notes}</p>
+      </div>
+    ` : '';
 
     const loginSection = isNewUser
       ? `
@@ -128,29 +216,50 @@ export class EmailService {
           
           <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 25px 0;">
             <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px;">${config.detailsTitle}</h3>
-            <table style="width: 100%; border-collapse: collapse;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
               <tr>
-                <td style="padding: 8px 0; color: #aaa; width: 100px;">Game:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${gameName}</td>
+                <td style="padding: 6px 0; color: #aaa; width: 130px;">Game:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${gameName}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #aaa;">Level:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${levelName}</td>
+                <td style="padding: 6px 0; color: #aaa;">Category:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${categoryName}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #aaa;">Session:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${sessionName}</td>
+                <td style="padding: 6px 0; color: #aaa;">Session:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${sessionName}</td>
+              </tr>
+              ${skillLevel ? `
+                <tr>
+                  <td style="padding: 6px 0; color: #aaa;">Skill Level:</td>
+                  <td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">${skillLevel}</td>
+                </tr>
+              ` : ''}
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Date:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${date}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #aaa;">Date:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${date}</td>
+                <td style="padding: 6px 0; color: #aaa;">Time:</td>
+                <td style="padding: 6px 0; font-weight: bold;">${time}</td>
               </tr>
+              ${serviceOptionName ? `
+                <tr>
+                  <td style="padding: 6px 0; color: #aaa;">Experience / Service:</td>
+                  <td style="padding: 6px 0; font-weight: bold;">${serviceOptionName}</td>
+                </tr>
+              ` : ''}
               <tr>
-                <td style="padding: 8px 0; color: #aaa;">Time:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${time}</td>
+                <td style="padding: 6px 0; color: #aaa;">Total Paid:</td>
+                <td style="padding: 6px 0; font-weight: bold; color: #D4AF6A; font-size: 14px;">AED ${totalAmount} <span style="font-size:11px; color:#4ade80; font-weight:normal;">(Paid)</span></td>
               </tr>
+              ${venueDetailsHtml}
             </table>
           </div>
+
+          ${participantsHtml}
+
+          ${notesHtml}
 
           ${loginSection}
 
