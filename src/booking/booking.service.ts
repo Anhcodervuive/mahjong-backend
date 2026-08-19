@@ -223,11 +223,13 @@ export class BookingService {
         orderReference: payment.transactionId,
         sessionName: payment.booking?.session?.title,
         gameName: payment.booking?.session?.category?.game?.name,
-        levelName: payment.booking?.session?.category?.name,
+        categoryName: payment.booking?.session?.category?.name,
+        level: payment.booking?.level,
+        levelName: payment.booking?.level || (payment.booking?.session?.category?.name?.toLowerCase() !== 'social play' ? payment.booking?.session?.category?.name : ''),
         date: payment.booking?.bookingDate?.toISOString(),
         startTime: payment.booking?.startTime,
         endTime: payment.booking?.endTime,
-        venue: venueSetting?.value || 'Venue address not set',
+        venue: payment.booking?.location?.address || payment.booking?.location?.name || venueSetting?.value || 'Venue address not set',
         status: statusData.state,
       };
     } catch (error) {
