@@ -470,13 +470,6 @@ export class EmailService {
       </tr>
     ` : '';
 
-    const messageHtml = request.message ? `
-      <div style="background-color: #fdfaf3; border: 1px solid #e8dec8; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 13px;">
-        <strong style="color: #071F1B;">📝 Your Notes / Message:</strong>
-        <p style="margin: 5px 0 0; color: #555;">${request.message}</p>
-      </div>
-    ` : '';
-
     const htmlContent = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
         
@@ -528,8 +521,6 @@ export class EmailService {
               ${friendInfoHtml}
             </table>
           </div>
-
-          ${messageHtml}
 
           <!-- Next Steps Box -->
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #D4AF6A;">
