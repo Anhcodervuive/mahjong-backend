@@ -201,6 +201,7 @@ export class EmailService {
     let venueDetailsHtml = '';
     if (bookingDetails?.location) {
       const loc = bookingDetails.location;
+      const minSpendVal = Number(loc.price || 0);
       venueDetailsHtml = `
         <tr>
           <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Venue & Location</td>
@@ -211,6 +212,7 @@ export class EmailService {
         </tr>
         ${loc.description ? `<tr><td style="padding: 6px 0; color: #aaa;">Venue:</td><td style="padding: 6px 0; font-weight: bold;">${loc.description}</td></tr>` : ''}
         ${loc.address ? `<tr><td style="padding: 6px 0; color: #aaa;">Address:</td><td style="padding: 6px 0;">${loc.address}</td></tr>` : ''}
+        ${minSpendVal > 0 ? `<tr><td style="padding: 6px 0; color: #aaa;">Minimum Spend:</td><td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">AED ${minSpendVal.toFixed(2)} / person <span style="font-size: 11px; font-weight: normal; color: #aaa;">(payable at venue)</span></td></tr>` : ''}
         ${loc.parking ? `<tr><td style="padding: 6px 0; color: #aaa;">Parking:</td><td style="padding: 6px 0;">${loc.parking}</td></tr>` : ''}
         ${loc.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${loc.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
       `;
