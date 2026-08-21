@@ -385,7 +385,7 @@ export class EmailService {
         lastName: 'Player',
         email: email,
         phone: '+971 50 123 4567',
-        level: 'Foundation',
+        level: 'Beginner',
         ageGroup: '18–29 years',
         groupSize: 2,
         days: ['Tuesday', 'Saturday'],
@@ -435,6 +435,7 @@ export class EmailService {
         name: 'Dubai Hills',
         description: "Tasha's Teahouse",
         address: 'Maple 1, Villa 611, Dubai Hills, Dubai',
+        price: 50,
         mapUrl: 'https://maps.google.com',
       },
       participants: [
