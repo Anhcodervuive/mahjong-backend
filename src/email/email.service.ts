@@ -452,7 +452,7 @@ export class EmailService {
   async sendJoinCircleCustomerConfirmation(email: string, fullName: string, request: any) {
     const config = await this.getJoinCircleEmailConfig();
     const gameName = request.game?.name || 'Mahjong';
-    const level = request.level || 'Foundation';
+    const level = request.level || 'Beginner';
     const ageGroup = request.ageGroup || 'General';
     const groupSize = request.groupSize || 1;
     const days = Array.isArray(request.days) ? request.days.join(', ') : (request.days || 'Flexible');
