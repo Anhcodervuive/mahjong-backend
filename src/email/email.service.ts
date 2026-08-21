@@ -380,8 +380,6 @@ export class EmailService {
 
           ${participantsHtml}
 
-          ${notesHtml}
-
           ${loginSection}
 
           <div style="text-align: center; margin-top: 30px;">
@@ -453,7 +451,6 @@ export class EmailService {
       endTime: '12:00 PM',
       totalAmount: 300,
       level: 'Beginners',
-      notes: 'Looking forward to our first session together!',
       serviceOption: { name: 'Regular' },
       session: {
         title: '2 Hours Game Session',
