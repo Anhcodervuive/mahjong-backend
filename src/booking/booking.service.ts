@@ -25,7 +25,22 @@ export class BookingService {
       });
       if (!session) throw new NotFoundException('Session not found');
 
-      const serviceOption = await this.prisma.serviceOption.findUnique({ where: { id: data.serviceOptionId } });
+      const isSocialPlay = (session.category?.name ?? '').toLowerCase() === 'social play';
+
+      let serviceOption = data.serviceOptionId 
+        ? await this.prisma.serviceOption.findUnique({ where: { id: data.serviceOptionId } })
+        : null;
+
+      // For Social Play, ensure default to Regular (price 0)
+      if (isSocialPlay && (!serviceOption || Number(serviceOption.price) > 0)) {
+        const regularOption = await this.prisma.serviceOption.findFirst({
+          where: { OR: [{ name: 'Regular' }, { price: 0 }] }
+        });
+        if (regularOption) {
+          serviceOption = regularOption;
+          data.serviceOptionId = regularOption.id;
+        }
+      }
       
       const unitPrice = parseFloat(session.pricePerPerson.toString()) + (serviceOption ? parseFloat(serviceOption.price.toString()) : 0);
       const totalAmount = unitPrice * data.participants.length;
@@ -42,7 +57,6 @@ export class BookingService {
       }
 
       // --- SMART CHECK: Overlap & Capacity ---
-      const isSocialPlay = (session.category?.name ?? '').toLowerCase() === 'social play';
       if (!isSocialPlay) {
         const timeToMins = (t: string) => {
           if (!t) return 0;
