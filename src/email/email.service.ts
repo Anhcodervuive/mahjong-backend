@@ -90,6 +90,39 @@ export class EmailService {
     });
   }
 
+  private formatEmailText(text: string, linkColor: string = '#891A1A'): string {
+    if (!text) return '';
+
+    // 1. Convert markdown links: [Label](https://...) -> <a href="..." target="_blank" style="...">Label</a>
+    let formatted = text.replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g,
+      (match, label, url) => {
+        return `<a href="${url}" target="_blank" style="color: ${linkColor}; font-weight: bold; text-decoration: underline;">${label}</a>`;
+      }
+    );
+
+    // 2. Convert standalone URLs that are not part of an existing HTML attribute or tag
+    formatted = formatted.replace(
+      /(^|[^"'>=\/])(https?:\/\/[^\s<]+)/g,
+      (match, prefix, url) => {
+        return `${prefix}<a href="${url}" target="_blank" style="color: ${linkColor}; font-weight: bold; text-decoration: underline;">${url}</a>`;
+      }
+    );
+
+    // 3. Convert paragraphs (\n\n) and line breaks (\n)
+    const paragraphs = formatted.split(/\r?\n\s*\r?\n/);
+    if (paragraphs.length > 1) {
+      return paragraphs
+        .map(
+          (p) =>
+            `<p style="margin: 0 0 12px 0; line-height: 1.6;">${p.replace(/\r?\n/g, '<br/>')}</p>`
+        )
+        .join('');
+    }
+
+    return formatted.replace(/\r?\n/g, '<br/>');
+  }
+
   private async getEmailConfig(): Promise<Required<EmailTemplateConfig>> {
     try {
       const setting = await this.prisma.setting.findUnique({
@@ -300,7 +333,7 @@ export class EmailService {
         <div style="padding: 40px 30px;">
           <h2 style="color: #071F1B; margin-top: 0;">${config.confirmationTitle}</h2>
           <p style="color: #444; font-size: 16px; line-height: 1.6;">Hello <strong>${fullName}</strong>,</p>
-          <p style="color: #444; font-size: 16px; line-height: 1.6;">${config.introText}</p>
+          <div style="color: #444; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">${this.formatEmailText(config.introText)}</div>
           
           <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 25px 0;">
             <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px;">${config.detailsTitle}</h3>
@@ -486,7 +519,7 @@ export class EmailService {
         <div style="padding: 40px 30px;">
           <h2 style="color: #071F1B; margin-top: 0;">${config.subjectTitle}</h2>
           <p style="color: #444; font-size: 16px; line-height: 1.6;">Hello <strong>${fullName}</strong>,</p>
-          <p style="color: #444; font-size: 16px; line-height: 1.6;">${config.introText}</p>
+          <div style="color: #444; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">${this.formatEmailText(config.introText)}</div>
           
           <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 25px 0;">
             <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
@@ -522,8 +555,10 @@ export class EmailService {
 
           <!-- Next Steps Box -->
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #D4AF6A;">
-            <h3 style="color: #071F1B; margin-top: 0; font-size: 15px;">${config.nextStepsTitle}</h3>
-            <p style="color: #444; font-size: 14px; line-height: 1.6; margin-bottom: 0;">${config.nextStepsText}</p>
+            <h3 style="color: #071F1B; margin-top: 0; font-size: 15px; margin-bottom: 10px;">${config.nextStepsTitle}</h3>
+            <div style="color: #444; font-size: 14px; line-height: 1.6;">
+              ${this.formatEmailText(config.nextStepsText)}
+            </div>
           </div>
         </div>
         
@@ -608,7 +643,7 @@ export class EmailService {
         <div style="padding: 40px 30px;">
           <h2 style="color: #071F1B; margin-top: 0;">${config.subjectTitle}</h2>
           <p style="color: #444; font-size: 16px; line-height: 1.6;">Hello <strong>${contact.name}</strong>,</p>
-          <p style="color: #444; font-size: 16px; line-height: 1.6;">${config.introText}</p>
+          <div style="color: #444; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">${this.formatEmailText(config.introText)}</div>
           
           <!-- Summary Box -->
           <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 25px 0;">
@@ -639,9 +674,9 @@ export class EmailService {
 
           <!-- Follow-up Notice Box -->
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #D4AF6A;">
-            <p style="color: #071F1B; font-size: 14px; line-height: 1.6; margin: 0; font-weight: 500;">
-              ⏳ ${config.followUpNote}
-            </p>
+            <div style="color: #071F1B; font-size: 14px; line-height: 1.6; margin: 0; font-weight: 500;">
+              ⏳ ${this.formatEmailText(config.followUpNote)}
+            </div>
           </div>
 
           <!-- Quick Links Section -->
