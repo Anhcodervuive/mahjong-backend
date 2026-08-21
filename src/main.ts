@@ -11,8 +11,13 @@ async function bootstrap() {
   app.useGlobalFilters(new PrismaClientExceptionFilter());
   
   app.enableCors({
-    origin: '*', // Allow all origins for now, or specify the frontend port
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl) or any origin
+      callback(null, true);
+    },
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
   });
   await app.listen(process.env.PORT ?? 3000);
 }
