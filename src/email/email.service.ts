@@ -517,11 +517,6 @@ export class EmailService {
                 <td style="padding: 6px 0; color: #aaa;">Available Times:</td>
                 <td style="padding: 6px 0; font-weight: bold;">${times}</td>
               </tr>
-              <tr>
-                <td style="padding: 6px 0; color: #aaa;">Group Size:</td>
-                <td style="padding: 6px 0; font-weight: bold;">${groupSize} Player(s)</td>
-              </tr>
-              ${friendInfoHtml}
             </table>
           </div>
 
