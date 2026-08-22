@@ -64,8 +64,15 @@ export class BookingService {
       if (!isSocialPlay) {
         const timeToMins = (t: string) => {
           if (!t) return 0;
-          const [h, m] = t.split(':').map(Number);
-          return h * 60 + m;
+          const isPM = /pm/i.test(t);
+          const isAM = /am/i.test(t);
+          const cleanTime = t.replace(/(am|pm)/i, '').trim();
+          const parts = cleanTime.split(':').map(s => parseInt(s, 10) || 0);
+          let hours = parts[0] || 0;
+          const minutes = parts[1] || 0;
+          if (isPM && hours < 12) hours += 12;
+          if (isAM && hours === 12) hours = 0;
+          return hours * 60 + minutes;
         };
         const reqStartMins = timeToMins(data.startTime);
         const reqEndMins = timeToMins(data.endTime);
@@ -93,7 +100,7 @@ export class BookingService {
           const bEnd = timeToMins(b.endTime);
           const overlaps = Math.max(reqStartMins, bStart) < Math.min(reqEndMins, bEnd);
           if (!overlaps) return false;
-          if (b.sessionId === data.sessionId && b.startTime === data.startTime && b.endTime === data.endTime) return false;
+          if (b.sessionId === sessionId && b.startTime === data.startTime && b.endTime === data.endTime) return false;
           return true;
         });
 
@@ -101,7 +108,7 @@ export class BookingService {
           throw new BadRequestException('Instructor is already booked for an overlapping time slot.');
         }
 
-        const sameSlotBookings = overlappingBookings.filter(b => b.sessionId === data.sessionId && b.startTime === data.startTime && b.endTime === data.endTime);
+        const sameSlotBookings = overlappingBookings.filter(b => b.sessionId === sessionId && b.startTime === data.startTime && b.endTime === data.endTime);
         const bookedCount = sameSlotBookings.reduce((sum, b) => sum + (b.quantity || 1), 0);
         if (bookedCount + data.participants.length > session.maxPlayers) {
           throw new BadRequestException('Not enough capacity for this time slot.');
@@ -111,9 +118,9 @@ export class BookingService {
 
       const booking = await this.prisma.booking.create({
         data: {
-          sessionId: data.sessionId,
-          serviceOptionId: data.serviceOptionId,
-          locationId: data.locationId || null,
+          sessionId: sessionId,
+          serviceOptionId: serviceOptionId,
+          locationId: locationId || null,
           notes: data.notes || null,
           level: data.level || null,
           bookingDate,
@@ -127,13 +134,16 @@ export class BookingService {
           totalAmount,
           status: 'PENDING',
           participants: {
-            create: data.participants.map((p: any) => ({
-              ageGroupId: p.ageGroupId,
-              fullName: p.fullName || p.name || 'Guest',
-              email: p.email,
-              phone: p.phone,
-              isOwner: p.isOwner || false,
-            })),
+            create: data.participants.map((p: any) => {
+              const ageGroupId = p.ageGroupId ? (typeof p.ageGroupId === 'number' ? p.ageGroupId : parseInt(String(p.ageGroupId).replace(/\D/g, ''), 10)) : null;
+              return {
+                ageGroupId: isNaN(ageGroupId as number) ? null : ageGroupId,
+                fullName: p.fullName || p.name || 'Guest',
+                email: p.email,
+                phone: p.phone,
+                isOwner: p.isOwner || false,
+              };
+            }),
           },
         },
       });
