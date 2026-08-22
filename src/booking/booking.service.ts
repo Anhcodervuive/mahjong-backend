@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger, NotFoundException, BadRequestException, HttpException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentService } from '../payment/payment.service';
 import { EmailService } from '../email/email.service';
@@ -18,17 +18,21 @@ export class BookingService {
 
   async createBooking(data: any): Promise<{ paymentUrl: string }> {
     try {
+      const sessionId = typeof data.sessionId === 'number' ? data.sessionId : parseInt(String(data.sessionId || '').replace(/\D/g, ''), 10);
+      let serviceOptionId = data.serviceOptionId ? (typeof data.serviceOptionId === 'number' ? data.serviceOptionId : parseInt(String(data.serviceOptionId || '').replace(/\D/g, ''), 10)) : null;
+      const locationId = data.locationId ? (typeof data.locationId === 'number' ? data.locationId : parseInt(String(data.locationId || '').replace(/\D/g, ''), 10)) : null;
+
       // 1. Create Booking in DB (Status: PENDING)
       const session = await this.prisma.session.findUnique({ 
-        where: { id: data.sessionId },
+        where: { id: sessionId },
         include: { category: true }
       });
-      if (!session) throw new NotFoundException('Session not found');
+      if (!session) throw new NotFoundException(`Session not found (id: ${data.sessionId})`);
 
       const isSocialPlay = (session.category?.name ?? '').toLowerCase() === 'social play';
 
-      let serviceOption = data.serviceOptionId 
-        ? await this.prisma.serviceOption.findUnique({ where: { id: data.serviceOptionId } })
+      let serviceOption = serviceOptionId 
+        ? await this.prisma.serviceOption.findUnique({ where: { id: serviceOptionId } })
         : null;
 
       // For Social Play, ensure default to Regular (price 0)
@@ -38,7 +42,7 @@ export class BookingService {
         });
         if (regularOption) {
           serviceOption = regularOption;
-          data.serviceOptionId = regularOption.id;
+          serviceOptionId = regularOption.id;
         }
       }
       
@@ -164,7 +168,11 @@ export class BookingService {
       return { paymentUrl: paymentLink };
     } catch (error) {
       this.logger.error('Failed to create booking', error);
-      throw new InternalServerErrorException('Booking creation failed');
+      console.error('Failed to create booking full error:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(error?.message || 'Booking creation failed');
     }
   }
 
