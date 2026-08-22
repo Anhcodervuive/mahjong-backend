@@ -3,10 +3,12 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { PrismaClientExceptionFilter } from './prisma/prisma-client-exception.filter';
+import { AppLoggerService } from './common/app-logger.service';
 import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new AppLoggerService('Bootstrap');
+  const app = await NestFactory.create(AppModule, { logger });
 
   // Custom CORS middleware to guarantee all headers and OPTIONS 204 preflights succeed
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -40,6 +42,8 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.useGlobalFilters(new PrismaClientExceptionFilter());
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  logger.log(`Mahjong Backend is running on port ${port} [NODE_ENV=${process.env.NODE_ENV || 'development'}]`);
 }
 bootstrap();

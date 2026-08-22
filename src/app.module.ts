@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -30,6 +30,7 @@ import { SettingsModule } from './settings/settings.module';
 import { LocationsModule } from './locations/locations.module';
 import { JoinCircleModule } from './join-circle/join-circle.module';
 import { ContactModule } from './contact/contact.module';
+import { HttpLoggingMiddleware } from './common/http-logging.middleware';
 
 @Module({
   imports: [
@@ -67,4 +68,8 @@ import { ContactModule } from './contact/contact.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpLoggingMiddleware).forRoutes('*');
+  }
+}
