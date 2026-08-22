@@ -3,10 +3,18 @@ import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
-  private readonly paymentUrl = process.env.PAYMENT_URL;
-  private readonly apiKey = process.env.PAYMENT_GATEWAY_API_KEY;
-  private readonly outletId = process.env.PAYMENT_OUTLET_ID;
-  private readonly currency = (process.env.PAYMENT_CURRENCY || 'AED').replace(/['"]/g, '').trim();
+  private get paymentUrl(): string {
+    return (process.env.PAYMENT_URL || 'https://api-gateway.ngenius-payments.com').replace(/\/+$/, '');
+  }
+  private get apiKey(): string {
+    return process.env.PAYMENT_GATEWAY_API_KEY || 'NjQ5YmU1YzgtYzE0ZS00ZTY2LTkxMmUtM2FkNzhjZTIzODlkOjNjNGY4MjZhLTMzOTMtNDcyMy1hZmIyLTBkMGM5MjFiODRmMQ==';
+  }
+  private get outletId(): string {
+    return process.env.PAYMENT_OUTLET_ID || '89031a8a-b600-4d88-bf36-bdb056bbc6ba';
+  }
+  private get currency(): string {
+    return (process.env.PAYMENT_CURRENCY || 'AED').replace(/['"]/g, '').trim();
+  }
 
   /**
    * Request an Access Token from N-Genius Identity API
