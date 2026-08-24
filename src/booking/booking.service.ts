@@ -298,7 +298,7 @@ export class BookingService {
         isNewUser = true;
       }
 
-      // Send email
+      // Send customer confirmation email
       await this.emailService.sendBookingConfirmation(
         p.email,
         user.name,
@@ -307,6 +307,13 @@ export class BookingService {
         booking
       );
     }));
+
+    // Send admin notification email to mahjongsuccess@gmail.com with CC to srinath.u@infozzle.com
+    try {
+      await this.emailService.sendBookingAdminNotification(booking);
+    } catch (e) {
+      this.logger.error('Failed to send admin booking notification email', e);
+    }
   }
 
   async getAllBookings(limit?: number, offset?: number, startDate?: string, endDate?: string) {
