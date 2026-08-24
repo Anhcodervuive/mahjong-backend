@@ -338,6 +338,18 @@ export class EmailService {
           <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 25px 0;">
             <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 10px;">${config.detailsTitle}</h3>
             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              ${bookingDetails?.id ? `
+              <tr>
+                <td style="padding: 6px 0; color: #aaa; width: 130px;">Booking Reference:</td>
+                <td style="padding: 6px 0; font-weight: bold; color: #D4AF6A; font-family: monospace; font-size: 14px;">#${bookingDetails.id}</td>
+              </tr>
+              ` : ''}
+              ${(bookingDetails?.payment?.transactionId || bookingDetails?.transactionId) ? `
+              <tr>
+                <td style="padding: 6px 0; color: #aaa;">Order Reference:</td>
+                <td style="padding: 6px 0; font-family: monospace; font-size: 12px; color: #ffffff;">${bookingDetails?.payment?.transactionId || bookingDetails?.transactionId}</td>
+              </tr>
+              ` : ''}
               <tr>
                 <td style="padding: 6px 0; color: #aaa; width: 130px;">Game:</td>
                 <td style="padding: 6px 0; font-weight: bold;">${gameName}</td>
@@ -400,7 +412,7 @@ export class EmailService {
       await this.transporter.sendMail({
         from: '"Mahjong Success" <' + this.configService.get<string>('SMTP_USER') + '>',
         to: email,
-        subject: config.confirmationTitle,
+        subject: bookingDetails?.id ? `${config.confirmationTitle} (#${bookingDetails.id})` : config.confirmationTitle,
         html: htmlContent,
       });
       this.logger.log(`Booking confirmation email sent to ${email}`);

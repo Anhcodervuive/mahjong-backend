@@ -345,4 +345,44 @@ export class BookingService {
       throw new InternalServerErrorException('Failed to fetch bookings');
     }
   }
+
+  async getUserBookings(email: string) {
+    if (!email) return [];
+    try {
+      return await this.prisma.booking.findMany({
+        where: {
+          isDeleted: false,
+          OR: [
+            { contactEmail: { equals: email, mode: 'insensitive' } },
+            { participants: { some: { email: { equals: email, mode: 'insensitive' } } } },
+          ],
+        },
+        include: {
+          session: {
+            include: {
+              category: {
+                include: {
+                  game: true,
+                },
+              },
+            },
+          },
+          serviceOption: true,
+          location: true,
+          participants: {
+            include: {
+              ageGroup: true,
+            },
+          },
+          payment: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to fetch bookings for ${email}`, error);
+      throw new InternalServerErrorException('Failed to fetch user bookings');
+    }
+  }
 }

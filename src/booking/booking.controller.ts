@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, UseGuards, Req } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -11,6 +11,13 @@ export class BookingController {
   @Post()
   async createBooking(@Body() data: any) {
     return this.bookingService.createBooking(data);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('my-bookings')
+  async getMyBookings(@Req() req: any) {
+    const email = req.user?.email;
+    return this.bookingService.getUserBookings(email);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
