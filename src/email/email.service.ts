@@ -395,7 +395,7 @@ export class EmailService {
           ${loginSection}
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${this.configService.get<string>('FRONTEND_URL') || 'https://mahjong-success.com'}/login" style="display: inline-block; background-color: #D4AF6A; color: #071F1B; text-decoration: none; font-weight: bold; padding: 12px 30px; border-radius: 30px; text-transform: uppercase; font-size: 14px; letter-spacing: 1px;">${config.buttonText}</a>
+            <a href="${(this.configService.get<string>('FRONTEND_URL') || 'https://staging.mahjongsuccess.com').replace(/\/+$/, '')}/login" style="display: inline-block; background-color: #D4AF6A; color: #071F1B; text-decoration: none; font-weight: bold; padding: 12px 30px; border-radius: 30px; text-transform: uppercase; font-size: 14px; letter-spacing: 1px;">${config.buttonText}</a>
           </div>
         </div>
         
@@ -637,7 +637,7 @@ export class EmailService {
 
   async sendContactCustomerAutoReply(contact: { name: string; email: string; subject: string; message: string; phone?: string }) {
     const config = await this.getContactUsEmailConfig();
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://mahjong-success.com';
+    const frontendUrl = (this.configService.get<string>('FRONTEND_URL') || 'https://staging.mahjongsuccess.com').replace(/\/+$/, '');
 
     const htmlContent = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
