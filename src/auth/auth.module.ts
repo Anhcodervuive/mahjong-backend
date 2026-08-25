@@ -8,12 +8,14 @@ import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 
+const jwtSecret = (process.env.JWT_SECRET || 'super-secret').replace(/^["']|["']$/g, '');
+
 @Module({
   imports: [
     UsersModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'super-secret',
+      secret: jwtSecret,
       signOptions: { expiresIn: '1d' },
     }),
   ],
