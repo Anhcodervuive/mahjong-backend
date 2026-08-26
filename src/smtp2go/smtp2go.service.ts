@@ -14,13 +14,20 @@ function formatPhoneNumber(phone?: string): string {
   }
   const cleanDigits = trimmed.replace(/\D/g, '');
   if (!cleanDigits) return trimmed;
+
   if (cleanDigits.startsWith('971')) {
+    return `+${cleanDigits}`;
+  }
+  if (cleanDigits.startsWith('91') && cleanDigits.length === 12) {
     return `+${cleanDigits}`;
   }
   if (cleanDigits.startsWith('0')) {
     return `+971 ${cleanDigits.slice(1)}`;
   }
   if (cleanDigits.length === 9 && cleanDigits.startsWith('5')) {
+    return `+971 ${cleanDigits}`;
+  }
+  if (cleanDigits.length === 7) {
     return `+971 ${cleanDigits}`;
   }
   return `+971 ${trimmed}`;

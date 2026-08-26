@@ -16,13 +16,20 @@ function formatPhoneNumber(phone?: string): string {
   }
   const cleanDigits = trimmed.replace(/\D/g, '');
   if (!cleanDigits) return trimmed;
+
   if (cleanDigits.startsWith('971')) {
+    return `+${cleanDigits}`;
+  }
+  if (cleanDigits.startsWith('91') && cleanDigits.length === 12) {
     return `+${cleanDigits}`;
   }
   if (cleanDigits.startsWith('0')) {
     return `+971 ${cleanDigits.slice(1)}`;
   }
   if (cleanDigits.length === 9 && cleanDigits.startsWith('5')) {
+    return `+971 ${cleanDigits}`;
+  }
+  if (cleanDigits.length === 7) {
     return `+971 ${cleanDigits}`;
   }
   return `+971 ${trimmed}`;
@@ -312,7 +319,7 @@ export class EmailService {
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
                   <td style="padding: 8px 4px; font-weight: bold; color: #fff;">${i + 1}. ${p.fullName || 'Guest'}${p.isOwner ? ' <span style="font-size:10px; color:#D4AF6A; border:1px solid #D4AF6A; padding:1px 4px; border-radius:3px; margin-left:4px;">Main</span>' : ''}</td>
                   <td style="padding: 8px 4px; color: #bbb;">${p.email || '-'}</td>
-                  <td style="padding: 8px 4px; color: #bbb;">${p.phone || '-'}</td>
+                  <td style="padding: 8px 4px; color: #bbb;">${formatPhoneNumber(p.phone) || '-'}</td>
                   <td style="padding: 8px 4px; color: #bbb;">${p.ageGroup?.name || p.ageGroup || '-'}</td>
                 </tr>
               `).join('')}
@@ -631,7 +638,7 @@ export class EmailService {
         <table style="width: 100%; border-collapse: collapse;">
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Name:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.firstName} ${request.lastName}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Email:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.email}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.phone}</td></tr>
+          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${formatPhoneNumber(request.phone)}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Game:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.game?.name || 'N/A'}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Level:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.level}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Age Group:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.ageGroup}</td></tr>
@@ -640,7 +647,7 @@ export class EmailService {
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Times:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${Array.isArray(request.times) ? request.times.join(', ') : request.times}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Group Size:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.groupSize}</td></tr>
         </table>
-        ${request.friendName || request.friendEmail ? `<p><strong>Friend:</strong> ${request.friendName || ''} (${request.friendEmail || ''} - ${request.friendPhone || ''})</p>` : ''}
+        ${request.friendName || request.friendEmail ? `<p><strong>Friend:</strong> ${request.friendName || ''} (${request.friendEmail || ''} - ${formatPhoneNumber(request.friendPhone) || ''})</p>` : ''}
         ${request.message ? `<p><strong>Message:</strong><br>${request.message}</p>` : ''}
         
         <p style="margin-top: 20px;">Please check the admin panel for more details.</p>
@@ -697,7 +704,7 @@ export class EmailService {
                 <td style="padding: 6px 0; color: #aaa;">Email:</td>
                 <td style="padding: 6px 0;">${contact.email}</td>
               </tr>
-              ${contact.phone ? `<tr><td style="padding: 6px 0; color: #aaa;">Phone:</td><td style="padding: 6px 0;">${contact.phone}</td></tr>` : ''}
+              ${contact.phone ? `<tr><td style="padding: 6px 0; color: #aaa;">Phone:</td><td style="padding: 6px 0;">${formatPhoneNumber(contact.phone)}</td></tr>` : ''}
             </table>
             
             <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -759,7 +766,7 @@ export class EmailService {
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee; width: 120px;"><strong>Subject:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #891A1A; font-weight: bold;">${contact.subject}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Name:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${contact.name}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Email:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><a href="mailto:${contact.email}">${contact.email}</a></td></tr>
-          ${contact.phone ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${contact.phone}</td></tr>` : ''}
+          ${contact.phone ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${formatPhoneNumber(contact.phone)}</td></tr>` : ''}
         </table>
         <div style="margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #071F1B;">
           <p style="margin: 0 0 5px 0; font-weight: bold; color: #333;">Message:</p>

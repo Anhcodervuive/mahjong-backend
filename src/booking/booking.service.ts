@@ -30,6 +30,11 @@ function formatPhoneNumber(phone?: string): string {
     return `+${cleanDigits}`;
   }
 
+  // If starts with 91 and has 12 digits (India country code)
+  if (cleanDigits.startsWith('91') && cleanDigits.length === 12) {
+    return `+${cleanDigits}`;
+  }
+
   // If starts with '0' (e.g. 0558840978 in UAE local format)
   if (cleanDigits.startsWith('0')) {
     return `+971 ${cleanDigits.slice(1)}`;
@@ -37,6 +42,11 @@ function formatPhoneNumber(phone?: string): string {
 
   // If 9 digits starting with 5 (UAE mobile without 0, e.g. 558840978)
   if (cleanDigits.length === 9 && cleanDigits.startsWith('5')) {
+    return `+971 ${cleanDigits}`;
+  }
+
+  // If 7 digits (e.g. 1234567)
+  if (cleanDigits.length === 7) {
     return `+971 ${cleanDigits}`;
   }
 
