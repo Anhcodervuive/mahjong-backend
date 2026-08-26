@@ -14,7 +14,9 @@ export class UsersController {
   async getAllUsers(
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
+    @Query('search') search?: string,
+    @Query('type') type?: string,
   ) {
-    return this.usersService.getAllUsers(limit, offset);
+    return this.usersService.getAllUsers(limit, offset, search, type);
   }
 }

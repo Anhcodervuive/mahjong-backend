@@ -96,26 +96,25 @@ export class Smtp2goService {
     let participantsHtml = '';
     if (participants.length > 0) {
       participantsHtml = `
-        <div style="background-color: #071F1B; color: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 12px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+        <div style="background-color: #071F1B; color: #fff; padding: 18px 16px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #D4AF6A; margin-top: 0; margin-bottom: 12px; border-bottom: 1px solid rgba(212, 175, 106, 0.3); padding-bottom: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">
             👥 Players (${participants.length} Player${participants.length > 1 ? 's' : ''})
           </h3>
-          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-            <thead>
-              <tr style="border-bottom: 1px solid rgba(255,255,255,0.15); text-align: left; color: #D4AF6A;">
-                <th style="padding: 6px 4px;">Name</th>
-                <th style="padding: 6px 4px;">Email</th>
-                <th style="padding: 6px 4px;">Phone</th>
-                <th style="padding: 6px 4px;">Age Group</th>
-              </tr>
-            </thead>
+          <table style="width: 100%; border-collapse: collapse;">
             <tbody>
               ${participants.map((p: any, i: number) => `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                  <td style="padding: 8px 4px; font-weight: bold; color: #fff;">${i + 1}. ${p.fullName || 'Guest'}${p.isOwner ? ' <span style="font-size:10px; color:#D4AF6A; border:1px solid #D4AF6A; padding:1px 4px; border-radius:3px; margin-left:4px;">Main</span>' : ''}</td>
-                  <td style="padding: 8px 4px; color: #bbb;">${p.email || '-'}</td>
-                  <td style="padding: 8px 4px; color: #bbb;">${formatPhoneNumber(p.phone) || '-'}</td>
-                  <td style="padding: 8px 4px; color: #bbb;">${p.ageGroup?.name || p.ageGroup || '-'}</td>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                  <td style="padding: 10px 4px; vertical-align: top;">
+                    <div style="font-size: 13px; font-weight: bold; color: #ffffff; margin-bottom: 4px;">
+                      <span>${i + 1}. ${p.fullName || 'Guest'}</span>
+                      ${p.isOwner ? '<span style="font-size: 9px; color: #D4AF6A; border: 1px solid #D4AF6A; padding: 1px 5px; border-radius: 3px; margin-left: 6px; font-weight: normal; vertical-align: middle;">Main</span>' : ''}
+                      ${(p.ageGroup?.name || p.ageGroup) ? `<span style="display: inline-block; font-size: 10px; color: #D4AF6A; background-color: rgba(212,175,106,0.18); padding: 1px 7px; border-radius: 10px; margin-left: 6px; font-weight: normal; border: 1px solid rgba(212,175,106,0.3); vertical-align: middle;">${p.ageGroup?.name || p.ageGroup}</span>` : ''}
+                    </div>
+                    <div style="font-size: 12px; color: #bbb; line-height: 1.5; word-break: break-all;">
+                      ${p.email ? `<span style="color: #bbb; margin-right: 14px; display: inline-block;">✉️ ${p.email}</span>` : ''}
+                      ${p.phone ? `<span style="color: #bbb; display: inline-block;">📞 ${formatPhoneNumber(p.phone)}</span>` : ''}
+                    </div>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
