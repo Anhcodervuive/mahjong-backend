@@ -333,6 +333,31 @@ export class BookingService {
           where: { id: payment.bookingId },
           data: { status: 'FAILED' },
         });
+
+        // Send payment failure email to the user
+        const customerEmail =
+          payment.booking?.contactEmail ||
+          payment.booking?.participants?.find((p: any) => p.isOwner)?.email ||
+          payment.booking?.participants?.[0]?.email;
+        const customerName =
+          payment.booking?.contactName ||
+          payment.booking?.participants?.find((p: any) => p.isOwner)?.fullName ||
+          payment.booking?.participants?.[0]?.fullName ||
+          'Valued Player';
+
+        const rawState = statusData?._embedded?.payment?.[0]?.state || statusData?.state;
+        const authMessage = statusData?._embedded?.payment?.[0]?.authResponse?.message;
+        const failureReason =
+          authMessage ||
+          (rawState ? `Gateway status: ${rawState}` : 'Transaction was declined or cancelled by the card issuer / bank.');
+
+        if (customerEmail) {
+          this.emailService
+            .sendPaymentFailedEmail(customerEmail, customerName, payment.booking, failureReason)
+            .catch((e) =>
+              this.logger.error(`Background payment failure email failed for ${customerEmail}`, e),
+            );
+        }
       }
 
       const venueSetting = await this.prisma.setting.findUnique({ where: { key: 'VENUE_DETAILS' } });
