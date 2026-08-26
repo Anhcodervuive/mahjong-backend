@@ -337,6 +337,17 @@ export class BookingService {
 
       const venueSetting = await this.prisma.setting.findUnique({ where: { key: 'VENUE_DETAILS' } });
 
+      const sessionTitle = payment.booking?.session?.title || '';
+      const catName = payment.booking?.session?.category?.name || '';
+      const isLevelSession = /level\s*\d+/i.test(sessionTitle) || /^level\s*\d+/i.test(catName);
+      let sessionLevel: string | null = null;
+      if (isLevelSession) {
+        const titleMatch = sessionTitle.match(/level\s*\d+/i);
+        const catMatch = catName.match(/level\s*\d+/i);
+        sessionLevel = titleMatch ? titleMatch[0] : (catMatch ? catMatch[0] : null);
+      }
+      const finalLevel = payment.booking?.level || sessionLevel || null;
+
       return {
         success: isSuccess,
         bookingId: payment.bookingId,
@@ -344,8 +355,8 @@ export class BookingService {
         sessionName: payment.booking?.session?.title,
         gameName: payment.booking?.session?.category?.game?.name,
         categoryName: payment.booking?.session?.category?.name,
-        level: payment.booking?.level,
-        levelName: payment.booking?.level || (payment.booking?.session?.category?.name?.toLowerCase() !== 'social play' ? payment.booking?.session?.category?.name : ''),
+        level: finalLevel,
+        levelName: finalLevel || '',
         date: payment.booking?.bookingDate?.toISOString(),
         startTime: payment.booking?.startTime,
         endTime: payment.booking?.endTime,
