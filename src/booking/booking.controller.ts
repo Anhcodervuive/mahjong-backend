@@ -28,8 +28,11 @@ export class BookingController {
     @Query('offset') offset?: number,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('type') type?: string,
   ) {
-    return this.bookingService.getAllBookings(limit, offset, startDate, endDate);
+    return this.bookingService.getAllBookings(limit, offset, startDate, endDate, search, status, type);
   }
 
   @Get('verify-payment')

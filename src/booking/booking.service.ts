@@ -414,16 +414,137 @@ export class BookingService {
     }
   }
 
-  async getAllBookings(limit?: number, offset?: number, startDate?: string, endDate?: string) {
+  async getAllBookings(
+    limit?: number,
+    offset?: number,
+    startDate?: string,
+    endDate?: string,
+    search?: string,
+    status?: string,
+    type?: string,
+  ) {
     try {
-      const where: any = {};
+      const dateWhere: any = {};
       if (startDate || endDate) {
-        where.createdAt = {};
-        if (startDate) where.createdAt.gte = new Date(startDate);
+        dateWhere.createdAt = {};
+        if (startDate) dateWhere.createdAt.gte = new Date(startDate);
         if (endDate) {
           const end = new Date(endDate);
           end.setHours(23, 59, 59, 999);
-          where.createdAt.lte = end;
+          dateWhere.createdAt.lte = end;
+        }
+      }
+
+      const where: any = { ...dateWhere };
+
+      if (status && status !== 'ALL') {
+        if (status === 'SUCCESS') {
+          where.OR = [
+            { status: 'SUCCESS' },
+            { payment: { status: 'SUCCESS' } },
+          ];
+        } else if (status === 'PENDING') {
+          where.OR = [
+            { status: 'PENDING' },
+            { payment: { status: 'PENDING' } },
+          ];
+        } else if (status === 'FAILED') {
+          where.OR = [
+            { status: 'FAILED' },
+            { payment: { status: 'FAILED' } },
+          ];
+        }
+      }
+
+      // Booking Type Filter: TRAINING, GUIDED_GAME, PLAY_DATE
+      if (type && type !== 'ALL') {
+        if (type === 'PLAY_DATE') {
+          where.session = {
+            OR: [
+              { category: { name: { contains: 'social', mode: 'insensitive' } } },
+              { title: { contains: 'play date', mode: 'insensitive' } },
+            ],
+          };
+        } else if (type === 'GUIDED_GAME') {
+          where.session = {
+            AND: [
+              {
+                OR: [
+                  { type: 'GUIDED_GAME' },
+                  { category: { name: { contains: 'guided', mode: 'insensitive' } } },
+                  { title: { contains: 'game session', mode: 'insensitive' } },
+                  { title: { contains: 'guided', mode: 'insensitive' } },
+                ],
+              },
+              {
+                NOT: {
+                  OR: [
+                    { category: { name: { contains: 'social', mode: 'insensitive' } } },
+                    { title: { contains: 'play date', mode: 'insensitive' } },
+                  ],
+                },
+              },
+            ],
+          };
+        } else if (type === 'TRAINING') {
+          where.session = {
+            AND: [
+              {
+                OR: [
+                  { type: 'TRAINING' },
+                  { category: { name: { contains: 'level', mode: 'insensitive' } } },
+                  { category: { name: { contains: 'bundle', mode: 'insensitive' } } },
+                ],
+              },
+              {
+                NOT: {
+                  OR: [
+                    { category: { name: { contains: 'social', mode: 'insensitive' } } },
+                    { title: { contains: 'play date', mode: 'insensitive' } },
+                    { type: 'GUIDED_GAME' },
+                    { category: { name: { contains: 'guided', mode: 'insensitive' } } },
+                    { title: { contains: 'game session', mode: 'insensitive' } },
+                  ],
+                },
+              },
+            ],
+          };
+        }
+      }
+
+      // Search Query (Session, Game, Customer Name, Email, Phone, Level, Transaction ID, Location)
+      if (search && search.trim()) {
+        const q = search.trim();
+        const searchConditions: any[] = [
+          { contactName: { contains: q, mode: 'insensitive' } },
+          { contactEmail: { contains: q, mode: 'insensitive' } },
+          { contactPhone: { contains: q, mode: 'insensitive' } },
+          { level: { contains: q, mode: 'insensitive' } },
+          { session: { title: { contains: q, mode: 'insensitive' } } },
+          { session: { category: { name: { contains: q, mode: 'insensitive' } } } },
+          { session: { category: { game: { name: { contains: q, mode: 'insensitive' } } } } },
+          { location: { name: { contains: q, mode: 'insensitive' } } },
+          { serviceOption: { name: { contains: q, mode: 'insensitive' } } },
+          { payment: { transactionId: { contains: q, mode: 'insensitive' } } },
+          { participants: { some: { fullName: { contains: q, mode: 'insensitive' } } } },
+          { participants: { some: { email: { contains: q, mode: 'insensitive' } } } },
+        ];
+
+        const idNum = Number(q.replace('#', ''));
+        if (!isNaN(idNum) && idNum > 0) {
+          searchConditions.push({ id: idNum });
+        }
+
+        if (where.AND) {
+          where.AND.push({ OR: searchConditions });
+        } else if (where.OR) {
+          where.AND = [
+            { OR: where.OR },
+            { OR: searchConditions },
+          ];
+          delete where.OR;
+        } else {
+          where.OR = searchConditions;
         }
       }
 
@@ -433,7 +554,7 @@ export class BookingService {
         orderBy: {
           id: 'desc',
         },
-        take: limit ? Number(limit) : undefined,
+        take: limit && Number(limit) > 0 ? Number(limit) : undefined,
         skip: offset ? Number(offset) : undefined,
         include: {
           session: { include: { category: { include: { game: true } } } },
@@ -444,7 +565,75 @@ export class BookingService {
         },
       });
 
-      return { data, total };
+      // Compute segregation counts for the current date filter
+      const counts = {
+        all: await this.prisma.booking.count({ where: dateWhere }),
+        training: await this.prisma.booking.count({
+          where: {
+            ...dateWhere,
+            session: {
+              AND: [
+                {
+                  OR: [
+                    { type: 'TRAINING' },
+                    { category: { name: { contains: 'level', mode: 'insensitive' } } },
+                    { category: { name: { contains: 'bundle', mode: 'insensitive' } } },
+                  ],
+                },
+                {
+                  NOT: {
+                    OR: [
+                      { category: { name: { contains: 'social', mode: 'insensitive' } } },
+                      { title: { contains: 'play date', mode: 'insensitive' } },
+                      { type: 'GUIDED_GAME' },
+                      { category: { name: { contains: 'guided', mode: 'insensitive' } } },
+                      { title: { contains: 'game session', mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        }),
+        guidedGames: await this.prisma.booking.count({
+          where: {
+            ...dateWhere,
+            session: {
+              AND: [
+                {
+                  OR: [
+                    { type: 'GUIDED_GAME' },
+                    { category: { name: { contains: 'guided', mode: 'insensitive' } } },
+                    { title: { contains: 'game session', mode: 'insensitive' } },
+                    { title: { contains: 'guided', mode: 'insensitive' } },
+                  ],
+                },
+                {
+                  NOT: {
+                    OR: [
+                      { category: { name: { contains: 'social', mode: 'insensitive' } } },
+                      { title: { contains: 'play date', mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        }),
+        playDate: await this.prisma.booking.count({
+          where: {
+            ...dateWhere,
+            session: {
+              OR: [
+                { category: { name: { contains: 'social', mode: 'insensitive' } } },
+                { title: { contains: 'play date', mode: 'insensitive' } },
+              ],
+            },
+          },
+        }),
+      };
+
+      return { data, total, counts };
     } catch (error) {
       this.logger.error('Failed to fetch bookings', error);
       throw new InternalServerErrorException('Failed to fetch bookings');
