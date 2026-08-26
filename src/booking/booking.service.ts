@@ -4,6 +4,7 @@ import { PaymentService } from '../payment/payment.service';
 import { EmailService } from '../email/email.service';
 import { Smtp2goService } from '../smtp2go/smtp2go.service';
 import * as bcrypt from 'bcrypt';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class BookingService {
@@ -53,11 +54,39 @@ export class BookingService {
       // Expecting data.bookingDate to be in 'YYYY-MM-DD' format
       const bookingDate = new Date(`${data.bookingDate}T00:00:00.000Z`);
       
-      // Validate that booking is not in the past
-      const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
-      if (bookingDate < today) {
-        throw new BadRequestException('Cannot book a session in the past');
+      // Validate that booking satisfies the minimum 2 working days advance notice
+      const nowInDubai = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
+      const today = dayjs(nowInDubai).startOf('day');
+
+      let workingDaysCounted = 0;
+      let checkDate = today.add(1, 'day');
+      const upcomingOverrides = await this.prisma.dateOverride.findMany({
+        where: {
+          date: {
+            gte: today.toDate(),
+            lte: today.add(14, 'day').toDate(),
+          },
+        },
+      });
+      while (workingDaysCounted < 2) {
+        const dateStr = checkDate.format('YYYY-MM-DD');
+        const isSunday = checkDate.day() === 0;
+        const override = upcomingOverrides.find(
+          (o) => dayjs(o.date).format('YYYY-MM-DD') === dateStr
+        );
+        const isClosed = override ? override.isClosed : isSunday;
+
+        if (!isClosed) {
+          workingDaysCounted++;
+        }
+        if (workingDaysCounted < 2) {
+          checkDate = checkDate.add(1, 'day');
+        }
+      }
+      const earliestBookable = checkDate.add(1, 'day');
+
+      if (dayjs(data.bookingDate).isBefore(earliestBookable, 'day')) {
+        throw new BadRequestException('Bookings require at least 2 working days advance notice.');
       }
 
       // --- SMART CHECK: Overlap & Capacity ---

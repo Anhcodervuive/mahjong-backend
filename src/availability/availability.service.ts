@@ -6,11 +6,47 @@ import dayjs from 'dayjs';
 export class AvailabilityService {
   constructor(private prisma: PrismaService) {}
 
+  async getEarliestBookableDate(): Promise<dayjs.Dayjs> {
+    const nowInDubai = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
+    const today = dayjs(nowInDubai).startOf('day');
+
+    // Fetch upcoming date overrides for the next 14 days
+    const upcomingOverrides = await this.prisma.dateOverride.findMany({
+      where: {
+        date: {
+          gte: today.toDate(),
+          lte: today.add(14, 'day').toDate(),
+        },
+      },
+    });
+
+    let workingDaysCounted = 0;
+    let checkDate = today.add(1, 'day'); // Start checking from tomorrow
+
+    while (workingDaysCounted < 2) {
+      const dateStr = checkDate.format('YYYY-MM-DD');
+      const isSunday = checkDate.day() === 0;
+      const override = upcomingOverrides.find(
+        (o) => dayjs(o.date).format('YYYY-MM-DD') === dateStr
+      );
+      const isClosed = override ? override.isClosed : isSunday;
+
+      if (!isClosed) {
+        workingDaysCounted++;
+      }
+      if (workingDaysCounted < 2) {
+        checkDate = checkDate.add(1, 'day');
+      }
+    }
+
+    return checkDate.add(1, 'day');
+  }
+
   async getAvailabilityForMonth(year: number, month: number, sessionId?: number) {
     const startDate = dayjs(`${year}-${month}-01`).startOf('month');
     const endDate = startDate.endOf('month');
     const daysInMonth = startDate.daysInMonth();
-    const today = dayjs().startOf('day');
+    const earliestBookableDate = await this.getEarliestBookableDate();
 
     const weeklySchedules = await this.prisma.weeklySchedule.findMany();
     const dateOverrides = await this.prisma.dateOverride.findMany({
@@ -42,7 +78,7 @@ export class AvailabilityService {
 
     for (let d = 1; d <= daysInMonth; d++) {
       const currentDate = startDate.date(d);
-      const isPast = currentDate.isBefore(today);
+      const isPast = currentDate.isBefore(earliestBookableDate, 'day');
       const dateStr = currentDate.format('YYYY-MM-DD');
 
       if (isPast) {
@@ -179,7 +215,7 @@ export class AvailabilityService {
     const startDate = dayjs(`${year}-${month}-01`).startOf('month');
     const endDate = startDate.endOf('month');
     const daysInMonth = startDate.daysInMonth();
-    const today = dayjs().startOf('day');
+    const earliestBookableDate = await this.getEarliestBookableDate();
     const fifteenMinsAgo = dayjs().subtract(15, 'minute').toDate();
 
     const allBookings = await this.prisma.booking.findMany({
@@ -208,7 +244,7 @@ export class AvailabilityService {
 
       for (let d = 1; d <= daysInMonth; d++) {
         const currentDate = startDate.date(d);
-        if (currentDate.isBefore(today)) {
+        if (currentDate.isBefore(earliestBookableDate, 'day')) {
           result.push({ day: d, status: 'past', slots: [] });
           continue;
         }
@@ -327,7 +363,7 @@ export class AvailabilityService {
 
     for (let d = 1; d <= daysInMonth; d++) {
       const currentDate = startDate.date(d);
-      if (currentDate.isBefore(today)) {
+      if (currentDate.isBefore(earliestBookableDate, 'day')) {
         result.push({ day: d, status: 'past', slots: [] });
         continue;
       }
