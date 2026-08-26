@@ -6,6 +6,44 @@ import { Smtp2goService } from '../smtp2go/smtp2go.service';
 import * as bcrypt from 'bcrypt';
 import dayjs from 'dayjs';
 
+function formatPhoneNumber(phone?: string): string {
+  if (!phone) return '';
+  const trimmed = String(phone).trim();
+  if (!trimmed || trimmed === '-') return '';
+
+  // If already starts with '+'
+  if (trimmed.startsWith('+')) {
+    return trimmed;
+  }
+
+  // If starts with '00' (international prefix)
+  if (trimmed.startsWith('00')) {
+    return `+${trimmed.slice(2)}`;
+  }
+
+  // Clean all characters except digits
+  const cleanDigits = trimmed.replace(/\D/g, '');
+  if (!cleanDigits) return trimmed;
+
+  // If already has 971 at start (UAE country code)
+  if (cleanDigits.startsWith('971')) {
+    return `+${cleanDigits}`;
+  }
+
+  // If starts with '0' (e.g. 0558840978 in UAE local format)
+  if (cleanDigits.startsWith('0')) {
+    return `+971 ${cleanDigits.slice(1)}`;
+  }
+
+  // If 9 digits starting with 5 (UAE mobile without 0, e.g. 558840978)
+  if (cleanDigits.length === 9 && cleanDigits.startsWith('5')) {
+    return `+971 ${cleanDigits}`;
+  }
+
+  // Fallback: prepend +971
+  return `+971 ${trimmed}`;
+}
+
 @Injectable()
 export class BookingService {
   private readonly logger = new Logger(BookingService.name);
@@ -120,30 +158,40 @@ export class BookingService {
               }
             }
           },
-          include: { session: { include: { category: true } } }
+          include: { session: true }
         });
 
-        const hasOverlap = overlappingBookings.some(b => {
+        // 1. Instructor Conflict Check (Overlapping DIFFERENT sessions)
+        const instructorBusy = overlappingBookings.some(b => {
           if (!b.startTime || !b.endTime) return false;
           const bStart = timeToMins(b.startTime);
           const bEnd = timeToMins(b.endTime);
           const overlaps = Math.max(reqStartMins, bStart) < Math.min(reqEndMins, bEnd);
-          if (!overlaps) return false;
-          if (b.sessionId === sessionId && b.startTime === data.startTime && b.endTime === data.endTime) return false;
-          return true;
+          if (overlaps && (b.sessionId !== sessionId || b.startTime !== data.startTime || b.endTime !== data.endTime)) {
+            return true;
+          }
+          return false;
         });
 
-        if (hasOverlap) {
-          throw new BadRequestException('Instructor is already booked for an overlapping time slot.');
+        if (instructorBusy) {
+          throw new BadRequestException('The instructor is unavailable for this time slot due to another scheduled session.');
         }
 
-        const sameSlotBookings = overlappingBookings.filter(b => b.sessionId === sessionId && b.startTime === data.startTime && b.endTime === data.endTime);
-        const bookedCount = sameSlotBookings.reduce((sum, b) => sum + (b.quantity || 1), 0);
-        if (bookedCount + data.participants.length > session.maxPlayers) {
-          throw new BadRequestException('Not enough capacity for this time slot.');
+        // 2. Capacity Check for the exact same session slot
+        const sameSlotBookings = overlappingBookings.filter(b => 
+          b.sessionId === sessionId && b.startTime === data.startTime && b.endTime === data.endTime
+        );
+        const currentBookedCount = sameSlotBookings.reduce((sum, b) => sum + (b.quantity || 1), 0);
+        const maxCapacity = session.maxPlayers || 4;
+
+        if (currentBookedCount + data.participants.length > maxCapacity) {
+          const availableLeft = Math.max(0, maxCapacity - currentBookedCount);
+          throw new BadRequestException(`Only ${availableLeft} seat(s) remaining for this time slot.`);
         }
       }
       // ---------------------------------------
+
+      const formattedContactPhone = formatPhoneNumber(data.contactPhone);
 
       const booking = await this.prisma.booking.create({
         data: {
@@ -157,7 +205,7 @@ export class BookingService {
           endTime: data.endTime,
           contactName: data.contactName,
           contactEmail: data.contactEmail,
-          contactPhone: data.contactPhone,
+          contactPhone: formattedContactPhone,
           unitPrice,
           quantity: data.participants.length,
           totalAmount,
@@ -169,7 +217,7 @@ export class BookingService {
                 ageGroupId: isNaN(ageGroupId as number) ? null : ageGroupId,
                 fullName: p.fullName || p.name || 'Guest',
                 email: p.email,
-                phone: p.phone,
+                phone: formatPhoneNumber(p.phone) || formattedContactPhone,
                 isOwner: p.isOwner || false,
               };
             }),

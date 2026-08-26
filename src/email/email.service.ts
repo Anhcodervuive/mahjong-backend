@@ -3,6 +3,31 @@ import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 
+function formatPhoneNumber(phone?: string): string {
+  if (!phone) return '';
+  const trimmed = String(phone).trim();
+  if (!trimmed || trimmed === '-') return '';
+
+  if (trimmed.startsWith('+')) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('00')) {
+    return `+${trimmed.slice(2)}`;
+  }
+  const cleanDigits = trimmed.replace(/\D/g, '');
+  if (!cleanDigits) return trimmed;
+  if (cleanDigits.startsWith('971')) {
+    return `+${cleanDigits}`;
+  }
+  if (cleanDigits.startsWith('0')) {
+    return `+971 ${cleanDigits.slice(1)}`;
+  }
+  if (cleanDigits.length === 9 && cleanDigits.startsWith('5')) {
+    return `+971 ${cleanDigits}`;
+  }
+  return `+971 ${trimmed}`;
+}
+
 export interface EmailTemplateConfig {
   headerTitle?: string;
   confirmationTitle?: string;
@@ -831,7 +856,7 @@ export class EmailService {
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
                   <td style="padding: 8px 4px; font-weight: bold; color: #fff;">${i + 1}. ${p.fullName || 'Guest'}${p.isOwner ? ' <span style="font-size:10px; color:#D4AF6A; border:1px solid #D4AF6A; padding:1px 4px; border-radius:3px; margin-left:4px;">Main</span>' : ''}</td>
                   <td style="padding: 8px 4px; color: #bbb;">${p.email || '-'}</td>
-                  <td style="padding: 8px 4px; color: #bbb;">${p.phone || '-'}</td>
+                  <td style="padding: 8px 4px; color: #bbb;">${formatPhoneNumber(p.phone) || '-'}</td>
                   <td style="padding: 8px 4px; color: #bbb;">${p.ageGroup?.name || p.ageGroup || '-'}</td>
                 </tr>
               `).join('')}
@@ -879,7 +904,7 @@ export class EmailService {
               </tr>
               <tr>
                 <td style="padding: 3px 0; color: #666;">Phone:</td>
-                <td style="padding: 3px 0; color: #071F1B;">${bookingDetails?.contactPhone || '-'}</td>
+                <td style="padding: 3px 0; color: #071F1B;">${formatPhoneNumber(bookingDetails?.contactPhone) || '-'}</td>
               </tr>
             </table>
           </div>
