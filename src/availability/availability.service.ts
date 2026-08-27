@@ -25,11 +25,12 @@ export class AvailabilityService {
 
     while (workingDaysCounted < 2) {
       const dateStr = checkDate.format('YYYY-MM-DD');
-      const isSunday = checkDate.day() === 0;
+      const dow = checkDate.day();
+      const isWeekend = dow === 0 || dow === 6; // Sunday (0) or Saturday (6)
       const override = upcomingOverrides.find(
         (o) => dayjs(o.date).format('YYYY-MM-DD') === dateStr
       );
-      const isClosed = override ? override.isClosed : isSunday;
+      const isClosed = override ? override.isClosed : isWeekend;
 
       if (!isClosed) {
         workingDaysCounted++;

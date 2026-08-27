@@ -78,7 +78,10 @@ export class BookingService {
       });
       if (!session) throw new NotFoundException(`Session not found (id: ${data.sessionId})`);
 
-      const isSocialPlay = (session.category?.name ?? '').toLowerCase() === 'social play';
+      const isSocialPlay =
+        (session.category?.name ?? '').toLowerCase() === 'social play' ||
+        (session.category?.name ?? '').toLowerCase().includes('social') ||
+        session.title.toLowerCase().includes('play date');
 
       let serviceOption = serviceOptionId 
         ? await this.prisma.serviceOption.findUnique({ where: { id: serviceOptionId } })
@@ -118,11 +121,12 @@ export class BookingService {
       });
       while (workingDaysCounted < 2) {
         const dateStr = checkDate.format('YYYY-MM-DD');
-        const isSunday = checkDate.day() === 0;
+        const dow = checkDate.day();
+        const isWeekend = dow === 0 || dow === 6; // Sunday (0) or Saturday (6)
         const override = upcomingOverrides.find(
           (o) => dayjs(o.date).format('YYYY-MM-DD') === dateStr
         );
-        const isClosed = override ? override.isClosed : isSunday;
+        const isClosed = override ? override.isClosed : isWeekend;
 
         if (!isClosed) {
           workingDaysCounted++;
@@ -373,6 +377,25 @@ export class BookingService {
       }
       const finalLevel = payment.booking?.level || sessionLevel || null;
 
+      const isSocialPlay =
+        catName.toLowerCase() === 'social play' ||
+        catName.toLowerCase().includes('social') ||
+        sessionTitle.toLowerCase().includes('play date') ||
+        sessionTitle.toLowerCase().includes('social play');
+
+      let venueDisplay = '';
+      if (isSocialPlay) {
+        // For Social Play / Guided Games: only show Area (Name) e.g. "Al Wasl", "JLT", "Emirates Hills"
+        let locName = payment.booking?.location?.name;
+        if (!locName && payment.booking?.notes) {
+          const match = payment.booking.notes.match(/Preferred Location:\s*([^|]+)/i);
+          if (match && match[1]) locName = match[1].trim();
+        }
+        venueDisplay = locName || payment.booking?.location?.description || 'Preferred Area';
+      } else {
+        venueDisplay = payment.booking?.location?.address || payment.booking?.location?.name || venueSetting?.value || 'Venue address not set';
+      }
+
       return {
         success: isSuccess,
         bookingId: payment.bookingId,
@@ -385,7 +408,7 @@ export class BookingService {
         date: payment.booking?.bookingDate?.toISOString(),
         startTime: payment.booking?.startTime,
         endTime: payment.booking?.endTime,
-        venue: payment.booking?.location?.address || payment.booking?.location?.name || venueSetting?.value || 'Venue address not set',
+        venue: venueDisplay,
         status: statusData.state,
       };
     } catch (error) {

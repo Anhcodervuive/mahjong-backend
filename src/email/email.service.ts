@@ -322,17 +322,41 @@ export class EmailService {
         ${loc.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${loc.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
       `;
     } else {
-      const venueSetting = await this.prisma.setting.findUnique({ where: { key: 'VENUE_DETAILS' } });
-      if (venueSetting?.value) {
-        venueDetailsHtml = `
-          <tr>
-            <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Venue Address</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; color: #aaa; width: 130px;">Address:</td>
-            <td style="padding: 6px 0; font-weight: bold;">${venueSetting.value}</td>
-          </tr>
-        `;
+      const isSocialPlay =
+        categoryName.toLowerCase().includes('social') ||
+        sessionName.toLowerCase().includes('play date') ||
+        sessionName.toLowerCase().includes('social');
+
+      if (isSocialPlay) {
+        let preferredArea = '';
+        if (notes) {
+          const match = notes.match(/Preferred Location:\s*([^|]+)/i);
+          if (match && match[1]) preferredArea = match[1].trim();
+        }
+        if (preferredArea) {
+          venueDetailsHtml = `
+            <tr>
+              <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Preferred Area</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #aaa; width: 130px;">Area:</td>
+              <td style="padding: 6px 0; font-weight: bold;">${preferredArea}</td>
+            </tr>
+          `;
+        }
+      } else {
+        const venueSetting = await this.prisma.setting.findUnique({ where: { key: 'VENUE_DETAILS' } });
+        if (venueSetting?.value) {
+          venueDetailsHtml = `
+            <tr>
+              <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Venue Address</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #aaa; width: 130px;">Address:</td>
+              <td style="padding: 6px 0; font-weight: bold;">${venueSetting.value}</td>
+            </tr>
+          `;
+        }
       }
     }
 

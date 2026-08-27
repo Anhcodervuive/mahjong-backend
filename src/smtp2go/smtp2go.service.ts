@@ -75,8 +75,9 @@ export class Smtp2goService {
 
     // --- Location / Venue block ---
     const location = bookingDetails?.location;
-    const locationBlock = location
-      ? `
+    let locationBlock = '';
+    if (location) {
+      locationBlock = `
         <tr>
           <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Meeting Location & Venue</td>
         </tr>
@@ -88,8 +89,21 @@ export class Smtp2goService {
         ${location.address ? `<tr><td style="padding: 6px 0; color: #aaa;">Address:</td><td style="padding: 6px 0;">${location.address}</td></tr>` : ''}
         ${location.parking ? `<tr><td style="padding: 6px 0; color: #aaa;">Parking:</td><td style="padding: 6px 0;">${location.parking}</td></tr>` : ''}
         ${location.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${location.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
-      `
-      : '';
+      `;
+    } else if (bookingDetails?.notes && (categoryName.toLowerCase().includes('social') || sessionName.toLowerCase().includes('play date'))) {
+      const match = bookingDetails.notes.match(/Preferred Location:\s*([^|]+)/i);
+      if (match && match[1]) {
+        locationBlock = `
+          <tr>
+            <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Preferred Area</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #aaa; width: 130px;">Area:</td>
+            <td style="padding: 6px 0; font-weight: bold;">${match[1].trim()}</td>
+          </tr>
+        `;
+      }
+    }
 
     // Participants
     const participants = bookingDetails?.participants || [];
