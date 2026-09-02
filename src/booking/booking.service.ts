@@ -384,16 +384,22 @@ export class BookingService {
         sessionTitle.toLowerCase().includes('social play');
 
       let venueDisplay = '';
+      let locationDisplay = '';
       if (isSocialPlay) {
-        // For Social Play / Guided Games: only show Area (Name) e.g. "Al Wasl", "JLT", "Emirates Hills"
-        let locName = payment.booking?.location?.name;
-        if (!locName && payment.booking?.notes) {
+        // For Social Play / Guided Games:
+        // Venue: Cafe name (location.description)
+        // Location: Area name (location.name)
+        let areaName = payment.booking?.location?.name;
+        if (!areaName && payment.booking?.notes) {
           const match = payment.booking.notes.match(/Preferred Location:\s*([^|]+)/i);
-          if (match && match[1]) locName = match[1].trim();
+          if (match && match[1]) areaName = match[1].trim();
         }
-        venueDisplay = locName || payment.booking?.location?.description || 'Preferred Area';
+        const cafeName = payment.booking?.location?.description;
+        venueDisplay = cafeName || areaName || 'Preferred Venue';
+        locationDisplay = areaName || '';
       } else {
         venueDisplay = payment.booking?.location?.address || payment.booking?.location?.name || venueSetting?.value || 'Venue address not set';
+        locationDisplay = payment.booking?.location?.name || '';
       }
 
       return {
@@ -409,6 +415,7 @@ export class BookingService {
         startTime: payment.booking?.startTime,
         endTime: payment.booking?.endTime,
         venue: venueDisplay,
+        locationName: locationDisplay,
         status: statusData.state,
       };
     } catch (error) {
