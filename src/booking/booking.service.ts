@@ -780,4 +780,116 @@ export class BookingService {
       throw new InternalServerErrorException('Failed to fetch user bookings');
     }
   }
+
+  async createOfflineBooking(data: {
+    sessionId: number;
+    serviceOptionId?: number;
+    locationId?: number;
+    bookingDate: string;
+    startTime: string;
+    endTime: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    notes?: string;
+    quantity?: number;
+    participants?: { fullName: string; email?: string; phone?: string; ageGroupId?: number }[];
+  }) {
+    // 1. Verify session exists
+    const session = await this.prisma.session.findUnique({
+      where: { id: Number(data.sessionId) },
+      include: { category: true },
+    });
+    if (!session) {
+      throw new NotFoundException('Selected session not found');
+    }
+
+    // 2. Default service option if not provided
+    let serviceOptionId = data.serviceOptionId ? Number(data.serviceOptionId) : null;
+    if (!serviceOptionId) {
+      const defaultOption = await this.prisma.serviceOption.findFirst({
+        where: { isDeleted: false },
+        orderBy: { id: 'asc' },
+      });
+      serviceOptionId = defaultOption?.id || null;
+    }
+    if (!serviceOptionId) {
+      throw new BadRequestException('No service option found in system');
+    }
+
+    // 3. Default age group if needed
+    let defaultAgeGroupId: number | null = null;
+    const defaultAg = await this.prisma.ageGroup.findFirst({
+      where: { isDeleted: false },
+      orderBy: { id: 'asc' },
+    });
+    defaultAgeGroupId = defaultAg?.id || null;
+
+    const bookingDate = dayjs(data.bookingDate).toDate();
+    const quantity = Math.max(1, Number(data.quantity) || (data.participants?.length ?? 1));
+    const unitPrice = session.pricePerPerson || 0;
+    const totalAmount = Number(unitPrice) * quantity;
+    const contactName = data.contactName?.trim() || 'Offline Student (Blocked)';
+    const contactEmail = data.contactEmail?.trim() || 'offline@mahjongsuccess.com';
+    const contactPhone = formatPhoneNumber(data.contactPhone) || '+971 00 000 0000';
+    const notes = data.notes?.trim() || 'Offline Booking / Blocked by Admin';
+
+    // Prepare participants
+    const participantsData = (data.participants && data.participants.length > 0)
+      ? data.participants.map((p, idx) => ({
+          fullName: p.fullName?.trim() || (idx === 0 ? contactName : `Student ${idx + 1}`),
+          email: p.email?.trim() || null,
+          phone: formatPhoneNumber(p.phone) || null,
+          ageGroupId: p.ageGroupId ? Number(p.ageGroupId) : defaultAgeGroupId!,
+          isOwner: idx === 0,
+        }))
+      : Array.from({ length: quantity }).map((_, idx) => ({
+          fullName: idx === 0 ? contactName : `Student ${idx + 1}`,
+          email: idx === 0 ? contactEmail : null,
+          phone: idx === 0 ? contactPhone : null,
+          ageGroupId: defaultAgeGroupId!,
+          isOwner: idx === 0,
+        }));
+
+    const booking = await this.prisma.booking.create({
+      data: {
+        sessionId: session.id,
+        serviceOptionId,
+        locationId: data.locationId ? Number(data.locationId) : null,
+        bookingDate,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        contactName,
+        contactEmail,
+        contactPhone,
+        notes,
+        quantity,
+        unitPrice,
+        totalAmount,
+        status: 'SUCCESS', // Confirmed directly for offline
+        participants: {
+          create: participantsData,
+        },
+      },
+      include: {
+        session: { include: { category: true } },
+        serviceOption: true,
+        participants: true,
+        location: true,
+      },
+    });
+
+    return booking;
+  }
+
+  async deleteBooking(id: number) {
+    const booking = await this.prisma.booking.findUnique({ where: { id } });
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+    // Delete related participants and payment if needed, or delete cascade
+    await this.prisma.participant.deleteMany({ where: { bookingId: id } });
+    await this.prisma.payment.deleteMany({ where: { bookingId: id } });
+    return this.prisma.booking.delete({ where: { id } });
+  }
 }

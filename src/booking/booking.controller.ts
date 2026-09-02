@@ -35,6 +35,20 @@ export class BookingController {
     return this.bookingService.getAllBookings(limit, offset, startDate, endDate, search, status, type);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Post('admin/create-offline')
+  async createOfflineBooking(@Body() data: any) {
+    return this.bookingService.createOfflineBooking(data);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Post(':id/delete')
+  async deleteBookingPost(@Req() req: any) {
+    return this.bookingService.deleteBooking(+req.params.id);
+  }
+
   @Get('verify-payment')
   async verifyPayment(@Query('ref') orderReference: string) {
     if (!orderReference) {
