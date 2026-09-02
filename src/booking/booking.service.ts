@@ -142,22 +142,22 @@ export class BookingService {
       }
 
       // --- SMART CHECK: Overlap & Capacity ---
-      if (!isSocialPlay) {
-        const timeToMins = (t: string) => {
-          if (!t) return 0;
-          const isPM = /pm/i.test(t);
-          const isAM = /am/i.test(t);
-          const cleanTime = t.replace(/(am|pm)/i, '').trim();
-          const parts = cleanTime.split(':').map(s => parseInt(s, 10) || 0);
-          let hours = parts[0] || 0;
-          const minutes = parts[1] || 0;
-          if (isPM && hours < 12) hours += 12;
-          if (isAM && hours === 12) hours = 0;
-          return hours * 60 + minutes;
-        };
-        const reqStartMins = timeToMins(data.startTime);
-        const reqEndMins = timeToMins(data.endTime);
+      const timeToMins = (t: string) => {
+        if (!t) return 0;
+        const isPM = /pm/i.test(t);
+        const isAM = /am/i.test(t);
+        const cleanTime = t.replace(/(am|pm)/i, '').trim();
+        const parts = cleanTime.split(':').map(s => parseInt(s, 10) || 0);
+        let hours = parts[0] || 0;
+        const minutes = parts[1] || 0;
+        if (isPM && hours < 12) hours += 12;
+        if (isAM && hours === 12) hours = 0;
+        return hours * 60 + minutes;
+      };
+      const reqStartMins = timeToMins(data.startTime);
+      const reqEndMins = timeToMins(data.endTime);
 
+      if (!isSocialPlay) {
         const overlappingBookings = await this.prisma.booking.findMany({
           where: {
             bookingDate,
@@ -197,6 +197,52 @@ export class BookingService {
         );
         const currentBookedCount = sameSlotBookings.reduce((sum, b) => sum + (b.quantity || 1), 0);
         const maxCapacity = session.maxPlayers || 4;
+
+        if (currentBookedCount + data.participants.length > maxCapacity) {
+          const availableLeft = Math.max(0, maxCapacity - currentBookedCount);
+          throw new BadRequestException(`Only ${availableLeft} seat(s) remaining for this time slot.`);
+        }
+      } else {
+        // --- Social Play (Play Days) Validation ---
+        const dayBookings = await this.prisma.booking.findMany({
+          where: {
+            bookingDate,
+            OR: [
+              { status: 'SUCCESS' },
+              { status: 'PENDING', createdAt: { gte: new Date(Date.now() - 15 * 60000) } },
+            ],
+          },
+          include: { session: true }
+        });
+
+        // 1. Check if another location or a different slot overlaps with 1-hour travel buffer
+        const conflict = dayBookings.some(b => {
+          if (!b.startTime || !b.endTime) return false;
+          const isDifferentSlot = b.locationId !== locationId || b.startTime !== data.startTime || b.endTime !== data.endTime;
+          if (!isDifferentSlot) return false;
+
+          const bStart = timeToMins(b.startTime);
+          const bEnd = timeToMins(b.endTime);
+          const blockedStart = bStart - 60;
+          const blockedEnd = bEnd + 60;
+          return reqStartMins < blockedEnd && reqEndMins > blockedStart;
+        });
+
+        if (conflict) {
+          throw new BadRequestException('The instructor is unavailable for this time slot due to an active session or travel buffer at another location.');
+        }
+
+        // 2. Capacity Check for the exact same location and shift
+        const sameSlotBookings = dayBookings.filter(b => 
+          b.locationId === locationId && b.startTime === data.startTime && b.endTime === data.endTime
+        );
+        const currentBookedCount = sameSlotBookings.reduce((sum, b) => sum + (b.quantity || 1), 0);
+
+        const dow = dayjs(bookingDate).day();
+        const locSchedule = locationId ? await this.prisma.locationSchedule.findFirst({
+          where: { locationId, dayOfWeek: dow, startTime: data.startTime, endTime: data.endTime }
+        }) : null;
+        const maxCapacity = locSchedule?.capacity || session.maxPlayers || 16;
 
         if (currentBookedCount + data.participants.length > maxCapacity) {
           const availableLeft = Math.max(0, maxCapacity - currentBookedCount);

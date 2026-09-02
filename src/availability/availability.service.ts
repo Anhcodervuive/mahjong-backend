@@ -283,15 +283,66 @@ export class AvailabilityService {
           continue;
         }
 
-        const dayBookings = allBookings.filter(b => dayjs(b.bookingDate).format('YYYY-MM-DD') === dateStr && b.locationId === locationId);
+        const dayAllBookings = allBookings.filter(
+          (b) => dayjs(b.bookingDate).format('YYYY-MM-DD') === dateStr
+        );
+
+        const timeToMins = (t: string) => {
+          if (!t) return 0;
+          const isPM = /pm/i.test(t);
+          const isAM = /am/i.test(t);
+          const cleanTime = t.replace(/(am|pm)/i, '').trim();
+          const parts = cleanTime.split(':').map((s) => parseInt(s, 10) || 0);
+          let hours = parts[0] || 0;
+          const minutes = parts[1] || 0;
+          if (isPM && hours < 12) hours += 12;
+          if (isAM && hours === 12) hours = 0;
+          return hours * 60 + minutes;
+        };
+
         const slots: any[] = [];
         let usedCapacity = 0;
 
         for (const shift of shifts) {
-          const slotBookings = dayBookings.filter(b => b.startTime === shift.startTimeStr && b.endTime === shift.endTimeStr);
-          const bookedCount = slotBookings.reduce((sum, b) => sum + (b.quantity || 1), 0);
-          const remaining = Math.max(0, shift.capacity - bookedCount);
-          usedCapacity += bookedCount;
+          const shiftStartMins = timeToMins(shift.startTimeStr);
+          const shiftEndMins = timeToMins(shift.endTimeStr);
+
+          // 1. Check if another location or different session slot conflicts with this slot
+          // (including 60-minute travel gap buffer before and after)
+          const isBlockedByConflict = dayAllBookings.some((b) => {
+            if (!b.startTime || !b.endTime) return false;
+            // Does NOT conflict with the EXACT same location and same time slot
+            const isDifferentSlot =
+              b.locationId !== locationId ||
+              b.startTime !== shift.startTimeStr ||
+              b.endTime !== shift.endTimeStr;
+            if (!isDifferentSlot) return false;
+
+            const bStart = timeToMins(b.startTime);
+            const bEnd = timeToMins(b.endTime);
+            // Blocked window is [bStart - 60, bEnd + 60] (1h travel gap buffer)
+            const blockedWindowStart = bStart - 60;
+            const blockedWindowEnd = bEnd + 60;
+
+            return shiftStartMins < blockedWindowEnd && shiftEndMins > blockedWindowStart;
+          });
+
+          let remaining = 0;
+          if (!isBlockedByConflict) {
+            // Same location and same slot: count booked participants
+            const sameSlotBookings = dayAllBookings.filter(
+              (b) =>
+                b.locationId === locationId &&
+                b.startTime === shift.startTimeStr &&
+                b.endTime === shift.endTimeStr
+            );
+            const bookedCount = sameSlotBookings.reduce(
+              (sum, b) => sum + (b.quantity || 1),
+              0
+            );
+            remaining = Math.max(0, shift.capacity - bookedCount);
+            usedCapacity += bookedCount;
+          }
 
           const sh = parseInt(shift.startTimeStr.split(':')[0], 10);
           const eh = parseInt(shift.endTimeStr.split(':')[0], 10);
@@ -304,7 +355,7 @@ export class AvailabilityService {
             startTime: shift.startTimeStr,
             endTime: shift.endTimeStr,
             remaining,
-            total: shift.capacity
+            total: shift.capacity,
           });
         }
         
