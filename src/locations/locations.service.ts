@@ -23,7 +23,7 @@ export class LocationsService {
   findAll() {
     return this.prisma.location.findMany({
       where: { isDeleted: false },
-      orderBy: { order: 'asc' },
+      orderBy: [{ order: 'asc' }, { id: 'asc' }],
       include: { schedules: true }
     });
   }
@@ -74,5 +74,16 @@ export class LocationsService {
       where: { id },
       data: { isDeleted: true },
     });
+  }
+
+  async reorder(itemIds: number[]) {
+    const transactions = itemIds.map((id, index) => 
+      this.prisma.location.update({
+        where: { id },
+        data: { order: index + 1 }
+      })
+    );
+    await this.prisma.$transaction(transactions);
+    return { success: true };
   }
 }
