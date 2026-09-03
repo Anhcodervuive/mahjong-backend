@@ -527,12 +527,14 @@ export class BookingService {
     try {
       const dateWhere: any = {};
       if (startDate || endDate) {
-        dateWhere.createdAt = {};
-        if (startDate) dateWhere.createdAt.gte = new Date(startDate);
+        dateWhere.bookingDate = {};
+        if (startDate) {
+          const start = new Date(`${startDate}T00:00:00.000Z`);
+          dateWhere.bookingDate.gte = isNaN(start.getTime()) ? new Date(startDate) : start;
+        }
         if (endDate) {
-          const end = new Date(endDate);
-          end.setHours(23, 59, 59, 999);
-          dateWhere.createdAt.lte = end;
+          const end = new Date(`${endDate}T23:59:59.999Z`);
+          dateWhere.bookingDate.lte = isNaN(end.getTime()) ? new Date(endDate) : end;
         }
       }
 
