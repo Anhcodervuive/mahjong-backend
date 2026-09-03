@@ -308,23 +308,29 @@ export class AvailabilityService {
           const shiftEndMins = timeToMins(shift.endTimeStr);
 
           // 1. Check if another location or different session slot conflicts with this slot
-          // (including 60-minute travel gap buffer before and after)
+          // - Different Location: applies 60-minute travel buffer [bStart - 60, bEnd + 60]
+          // - Same Location: NO travel buffer needed; allows consecutive/adjacent slots, only blocks direct overlaps
           const isBlockedByConflict = dayAllBookings.some((b) => {
             if (!b.startTime || !b.endTime) return false;
-            // Does NOT conflict with the EXACT same location and same time slot
-            const isDifferentSlot =
-              b.locationId !== locationId ||
-              b.startTime !== shift.startTimeStr ||
-              b.endTime !== shift.endTimeStr;
-            if (!isDifferentSlot) return false;
 
             const bStart = timeToMins(b.startTime);
             const bEnd = timeToMins(b.endTime);
-            // Blocked window is [bStart - 60, bEnd + 60] (1h travel gap buffer)
-            const blockedWindowStart = bStart - 60;
-            const blockedWindowEnd = bEnd + 60;
+            const isDifferentLocation = b.locationId !== locationId;
 
-            return shiftStartMins < blockedWindowEnd && shiftEndMins > blockedWindowStart;
+            if (isDifferentLocation) {
+              // Different location: Organizer needs 60 mins to travel between venues
+              const blockedWindowStart = bStart - 60;
+              const blockedWindowEnd = bEnd + 60;
+              return shiftStartMins < blockedWindowEnd && shiftEndMins > blockedWindowStart;
+            } else {
+              // Same location: Organizer is already at this venue, no travel time needed
+              // Exact same time slot does not block (will reduce remaining capacity below)
+              if (b.startTime === shift.startTimeStr && b.endTime === shift.endTimeStr) {
+                return false;
+              }
+              // Only block if there is a direct time overlap
+              return Math.max(shiftStartMins, bStart) < Math.min(shiftEndMins, bEnd);
+            }
           });
 
           let remaining = 0;
