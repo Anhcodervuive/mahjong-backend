@@ -272,19 +272,14 @@ export class AvailabilityService {
           }
         } else {
           const dow = currentDate.day();
-          const isWeekend = dow === 0 || dow === 6;
-          if (isWeekend) {
-            isClosed = true;
-          } else {
-            const ws = locationSchedules.filter(w => w.dayOfWeek === dow);
-            if (ws.length === 0) isClosed = true;
-            else {
-              shifts = ws.map(w => ({
-                startTimeStr: w.startTime,
-                endTimeStr: w.endTime,
-                capacity: w.capacity
-              }));
-            }
+          const ws = locationSchedules.filter(w => w.dayOfWeek === dow);
+          if (ws.length === 0) isClosed = true;
+          else {
+            shifts = ws.map(w => ({
+              startTimeStr: w.startTime,
+              endTimeStr: w.endTime,
+              capacity: w.capacity
+            }));
           }
         }
 
