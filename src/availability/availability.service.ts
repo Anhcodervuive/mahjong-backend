@@ -106,15 +106,20 @@ export class AvailabilityService {
         }
       } else {
         const dow = currentDate.day();
-        const ws = weeklySchedules.filter((w) => w.dayOfWeek === dow);
-        if (ws.length === 0) {
+        const isWeekend = dow === 0 || dow === 6; // Sunday (0) and Saturday (6)
+        if (isWeekend) {
           isClosed = true;
         } else {
-          shifts = ws.map((w) => ({
-            startTimeStr: w.startTime,
-            endTimeStr: w.endTime,
-            capacity: w.capacity
-          }));
+          const ws = weeklySchedules.filter((w) => w.dayOfWeek === dow);
+          if (ws.length === 0) {
+            isClosed = true;
+          } else {
+            shifts = ws.map((w) => ({
+              startTimeStr: w.startTime,
+              endTimeStr: w.endTime,
+              capacity: w.capacity
+            }));
+          }
         }
       }
 
@@ -267,14 +272,19 @@ export class AvailabilityService {
           }
         } else {
           const dow = currentDate.day();
-          const ws = locationSchedules.filter(w => w.dayOfWeek === dow);
-          if (ws.length === 0) isClosed = true;
-          else {
-            shifts = ws.map(w => ({
-              startTimeStr: w.startTime,
-              endTimeStr: w.endTime,
-              capacity: w.capacity
-            }));
+          const isWeekend = dow === 0 || dow === 6;
+          if (isWeekend) {
+            isClosed = true;
+          } else {
+            const ws = locationSchedules.filter(w => w.dayOfWeek === dow);
+            if (ws.length === 0) isClosed = true;
+            else {
+              shifts = ws.map(w => ({
+                startTimeStr: w.startTime,
+                endTimeStr: w.endTime,
+                capacity: w.capacity
+              }));
+            }
           }
         }
 
@@ -430,9 +440,13 @@ export class AvailabilityService {
       const override = dateOverrides.find(o => dayjs(o.date).format('YYYY-MM-DD') === dateStr);
       
       let isClosed = false;
-      if (override) isClosed = override.isClosed;
-      else {
-        const dow = currentDate.day();
+      const dow = currentDate.day();
+      const isWeekend = dow === 0 || dow === 6;
+      if (override) {
+        isClosed = override.isClosed;
+      } else if (isWeekend) {
+        isClosed = true;
+      } else {
         const ws = weeklySchedules.filter(w => w.dayOfWeek === dow);
         isClosed = ws.length === 0;
       }
