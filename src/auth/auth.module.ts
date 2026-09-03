@@ -8,12 +8,17 @@ import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 
+import { EmailModule } from '../email/email.module';
+import { ConfigModule } from '@nestjs/config';
+
 const jwtSecret = (process.env.JWT_SECRET || 'super-secret').replace(/^["']|["']$/g, '');
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
+    EmailModule,
+    ConfigModule,
     JwtModule.register({
       secret: jwtSecret,
       signOptions: { expiresIn: '1d' },

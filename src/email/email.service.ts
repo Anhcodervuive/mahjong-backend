@@ -1286,4 +1286,73 @@ export class EmailService {
       this.logger.error(`Failed to send booking admin notification email`, error);
     }
   }
+
+  async sendPasswordResetEmail(email: string, name: string, resetLink: string) {
+    const htmlContent = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #fcfbf9; border: 1px solid #e8e4dc; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        
+        <!-- Header -->
+        <div style="background-color: #071F1B; padding: 30px 20px; text-align: center; border-bottom: 3px solid #D4AF6A;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 1px; font-family: Georgia, serif;">
+            Mahjong Success
+          </h1>
+          <p style="color: #D4AF6A; margin: 5px 0 0; font-size: 13px; letter-spacing: 2px; text-transform: uppercase;">
+            Password Reset Request
+          </p>
+        </div>
+        
+        <!-- Body Content -->
+        <div style="padding: 35px 30px; background-color: #ffffff; color: #333333; line-height: 1.6;">
+          <h2 style="color: #071F1B; margin-top: 0; font-size: 20px; font-family: Georgia, serif;">
+            Hello ${name || 'there'},
+          </h2>
+          
+          <p style="font-size: 14px; color: #555555; margin-bottom: 25px;">
+            We received a request to reset the password for your <strong>Mahjong Success</strong> account associated with <span style="color: #891A1A; font-weight: 600;">${email}</span>.
+          </p>
+          
+          <p style="font-size: 14px; color: #555555; margin-bottom: 30px;">
+            Click the button below to choose a new password. This link is valid for <strong>1 hour</strong>.
+          </p>
+          
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="${resetLink}" style="display: inline-block; background-color: #891A1A; color: #ffffff; text-decoration: none; font-weight: bold; padding: 14px 36px; border-radius: 30px; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(137, 26, 26, 0.3);">
+              RESET MY PASSWORD
+            </a>
+          </div>
+
+          <div style="background-color: #fdfbf7; border-left: 4px solid #D4AF6A; padding: 15px; border-radius: 4px; margin: 25px 0; font-size: 13px; color: #666;">
+            <p style="margin: 0;"><strong>Security Note:</strong> If you did not request a password reset, you can safely ignore this email. Your current password will remain unchanged and your account is secure.</p>
+          </div>
+          
+          <p style="font-size: 12px; color: #888888; margin-top: 30px; word-break: break-all;">
+            If the button above doesn't work, copy and paste this link into your browser:<br/>
+            <a href="${resetLink}" style="color: #891A1A;">${resetLink}</a>
+          </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #071F1B; padding: 25px 20px; text-align: center; font-size: 12px; color: #8a9e99;">
+          <p style="margin: 0; color: #d1dbd8;">Mahjong Success &copy; ${new Date().getFullYear()}</p>
+          <p style="margin: 5px 0 0; color: #6e827d;">Curated Mahjong Experiences in Dubai</p>
+          <p style="margin: 10px 0 0; color: #556763; font-size: 11px;">This is an automated system email.</p>
+        </div>
+        
+      </div>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: '"Mahjong Success" <' + this.configService.get<string>('SMTP_USER') + '>',
+        to: email,
+        subject: `Reset Your Mahjong Success Password 🔐`,
+        html: htmlContent,
+      });
+      this.logger.log(`Password reset email sent to ${email}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send password reset email to ${email}`, error);
+      throw error;
+    }
+  }
 }
