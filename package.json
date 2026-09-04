@@ -22,7 +22,11 @@
     "db:push:dev": "npx dotenv-cli -e .env -- npx prisma db push",
     "db:push:prod": "npx dotenv-cli -e .env.production -- npx prisma db push",
     "db:seed:dev": "npx dotenv-cli -e .env -- npx prisma db seed",
-    "db:seed:prod": "npx dotenv-cli -e .env.production -- npx prisma db seed"
+    "db:seed:prod": "npx dotenv-cli -e .env.production -- npx prisma db seed",
+    "migrate:dev": "npx prisma migrate dev",
+    "migrate:deploy": "npx prisma migrate deploy",
+    "migrate:status": "npx prisma migrate status",
+    "migrate:resolve": "npx prisma migrate resolve"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
