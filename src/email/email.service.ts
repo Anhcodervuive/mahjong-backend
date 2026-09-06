@@ -1008,9 +1008,9 @@ export class EmailService {
               ${config.quickLinksTitle}
             </p>
             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+              <a href="${frontendUrl}/sessions" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">Training Sessions</a>
               <a href="${frontendUrl}/guided-games" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">Guided Games</a>
-              <a href="${frontendUrl}/fast-track-bundles" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">Fast Track Bundles</a>
-              <a href="${frontendUrl}/faq" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">FAQs</a>
+              <a href="${frontendUrl}/play-date-booking" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">Play Day</a>
             </div>
           </div>
         </div>
