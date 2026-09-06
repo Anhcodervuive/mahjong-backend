@@ -908,7 +908,8 @@ export class EmailService {
   }
 
   async sendJoinCircleAdminNotification(request: any) {
-    const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || this.configService.get<string>('SMTP_USER');
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || this.configService.get<string>('ADMIN_BOOKING_EMAIL') || 'mahjongsuccess@gmail.com';
+    const ccEmail = this.configService.get<string>('ADMIN_CONTACT_CC') || this.configService.get<string>('ADMIN_BOOKING_CC') || 'srinath.u@infozzle.com';
     const locations = request.locations && request.locations.length > 0
       ? request.locations.map((l: any) => l.name).join(', ')
       : 'Flexible';
@@ -940,10 +941,12 @@ export class EmailService {
       await this.transporter.sendMail({
         from: '"Mahjong Success" <' + this.configService.get<string>('SMTP_USER') + '>',
         to: adminEmail,
+        cc: ccEmail ? ccEmail : undefined,
+        replyTo: request.email,
         subject: 'New Join Circle Request',
         html: htmlContent,
       });
-      this.logger.log(`Join circle notification sent to ${adminEmail}`);
+      this.logger.log(`Join circle notification sent to ${adminEmail} (cc: ${ccEmail})`);
     } catch (error) {
       this.logger.error(`Failed to send join circle notification to ${adminEmail}`, error);
     }
@@ -1038,7 +1041,8 @@ export class EmailService {
   }
 
   async sendContactAdminNotification(contact: { name: string; email: string; subject: string; message: string; phone?: string }) {
-    const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || this.configService.get<string>('SMTP_USER');
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || this.configService.get<string>('ADMIN_BOOKING_EMAIL') || 'mahjongsuccess@gmail.com';
+    const ccEmail = this.configService.get<string>('ADMIN_CONTACT_CC') || this.configService.get<string>('ADMIN_BOOKING_CC') || 'srinath.u@infozzle.com';
     
     const htmlContent = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -1061,10 +1065,12 @@ export class EmailService {
       await this.transporter.sendMail({
         from: '"Mahjong Success" <' + this.configService.get<string>('SMTP_USER') + '>',
         to: adminEmail,
+        cc: ccEmail ? ccEmail : undefined,
+        replyTo: contact.email,
         subject: `New Enquiry: ${contact.subject} (from ${contact.name})`,
         html: htmlContent,
       });
-      this.logger.log(`Contact admin notification sent to ${adminEmail}`);
+      this.logger.log(`Contact admin notification sent to ${adminEmail} (cc: ${ccEmail})`);
     } catch (error) {
       this.logger.error(`Failed to send contact admin notification to ${adminEmail}`, error);
     }
