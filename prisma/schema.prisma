@@ -252,7 +252,7 @@ enum BookingStatus {
 model Booking {
   id              Int  @id @default(autoincrement())
   sessionId       Int
-  serviceOptionId Int
+  serviceOptionId Int?
   locationId      Int?
   notes           String?
   level           String?
@@ -271,9 +271,9 @@ model Booking {
 
   status BookingStatus @default(PENDING)
 
-  session       Session       @relation(fields: [sessionId], references: [id])
-  serviceOption ServiceOption @relation(fields: [serviceOptionId], references: [id])
-  location      Location?     @relation(fields: [locationId], references: [id])
+  session       Session        @relation(fields: [sessionId], references: [id])
+  serviceOption ServiceOption? @relation(fields: [serviceOptionId], references: [id])
+  location      Location?      @relation(fields: [locationId], references: [id])
 
   participants Participant[]
   payment      Payment?
