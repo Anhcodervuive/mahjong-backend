@@ -53,6 +53,27 @@ export class UsersService {
     });
   }
 
+  async updateProfile(userId: number, data: { name?: string; phone?: string }) {
+    const updateData: any = {};
+    if (data.name !== undefined && data.name.trim()) {
+      updateData.name = data.name.trim();
+    }
+    if (data.phone !== undefined) {
+      updateData.phone = data.phone.trim();
+    }
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        role: true,
+      },
+    });
+  }
+
   async getAllUsers(limit?: number, offset?: number, search?: string, type?: string) {
     // 1. Fetch all users
     const users = await this.prisma.user.findMany({
@@ -61,6 +82,7 @@ export class UsersService {
         id: true,
         name: true,
         email: true,
+        phone: true,
         role: true,
         createdAt: true,
       },
@@ -136,6 +158,7 @@ export class UsersService {
 
       // Phone
       const phone =
+        user.phone ||
         userBookings.find((b) => b.contactPhone)?.contactPhone ||
         userBookings
           .flatMap((b) => b.participants || [])
