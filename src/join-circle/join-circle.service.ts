@@ -4,6 +4,27 @@ import { CreateJoinCircleDto } from './dto/create-join-circle.dto';
 import { EmailService } from '../email/email.service';
 import * as bcrypt from 'bcrypt';
 
+function formatPhoneNumber(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const trimmed = phone.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith('+')) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('971')) {
+    return `+${trimmed}`;
+  }
+
+  if (trimmed.startsWith('05')) {
+    const cleanDigits = trimmed.substring(1);
+    return `+971 ${cleanDigits}`;
+  }
+
+  return `+971 ${trimmed}`;
+}
+
 @Injectable()
 export class JoinCircleService {
   private readonly logger = new Logger(JoinCircleService.name);
@@ -16,7 +37,7 @@ export class JoinCircleService {
   async create(createDto: CreateJoinCircleDto) {
     const cleanEmail = (createDto.email || '').toLowerCase().trim();
     const fullName = `${createDto.firstName || ''} ${createDto.lastName || ''}`.trim() || 'Player';
-    const phone = (createDto.phone || '').trim() || null;
+    const formattedPhone = formatPhoneNumber(createDto.phone) || createDto.phone?.trim() || null;
 
     const request = await this.prisma.joinCircleRequest.create({
       data: {
@@ -66,17 +87,17 @@ export class JoinCircleService {
               email: cleanEmail,
               password: hashedPassword,
               name: fullName,
-              phone: phone,
+              phone: formattedPhone,
               role: 'USER',
             },
           });
           isNewUser = true;
           this.logger.log(`Created new user account for join-circle participant: ${cleanEmail}`);
-        } else if (!user.phone && phone) {
+        } else if (!user.phone && formattedPhone) {
           // Update phone if existing user didn't have one
           await this.prisma.user.update({
             where: { id: user.id },
-            data: { phone },
+            data: { phone: formattedPhone },
           });
         }
       } catch (err) {
