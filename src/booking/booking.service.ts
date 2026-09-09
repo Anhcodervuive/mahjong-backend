@@ -81,21 +81,16 @@ export class BookingService {
       const isSocialPlay =
         (session.category?.name ?? '').toLowerCase() === 'social play' ||
         (session.category?.name ?? '').toLowerCase().includes('social') ||
-        session.title.toLowerCase().includes('play date');
+        session.title.toLowerCase().includes('play date') ||
+        session.title.toLowerCase().includes('play day');
 
-      let serviceOption = serviceOptionId 
+      let serviceOption = (!isSocialPlay && serviceOptionId) 
         ? await this.prisma.serviceOption.findUnique({ where: { id: serviceOptionId } })
         : null;
 
-      // For Social Play, ensure default to Regular (price 0)
-      if (isSocialPlay && (!serviceOption || Number(serviceOption.price) > 0)) {
-        const regularOption = await this.prisma.serviceOption.findFirst({
-          where: { OR: [{ name: 'Regular' }, { price: 0 }] }
-        });
-        if (regularOption) {
-          serviceOption = regularOption;
-          serviceOptionId = regularOption.id;
-        }
+      if (isSocialPlay) {
+        serviceOption = null;
+        serviceOptionId = null;
       }
       
       const unitPrice = parseFloat(session.pricePerPerson.toString()) + (serviceOption ? parseFloat(serviceOption.price.toString()) : 0);
@@ -481,6 +476,8 @@ export class BookingService {
       let isNewUser = false;
       let plainPassword = '';
 
+      const playerPhone = p.phone || booking.contactPhone || null;
+
       if (!user) {
         // Create new user
         plainPassword = Math.random().toString(36).slice(-8); // Random 8-char password
@@ -491,10 +488,17 @@ export class BookingService {
             email: p.email,
             password: hashedPassword,
             name: p.fullName || 'Guest',
+            phone: playerPhone,
             role: 'USER',
           }
         });
         isNewUser = true;
+      } else if (!user.phone && playerPhone) {
+        // Update user phone if not yet set
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { phone: playerPhone },
+        });
       }
 
       // Send customer confirmation email

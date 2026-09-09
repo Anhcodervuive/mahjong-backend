@@ -50,7 +50,14 @@ export class Smtp2goService {
     const gameName = bookingDetails?.session?.category?.game?.name || 'Mahjong';
     const categoryName = bookingDetails?.session?.category?.name || 'Session';
     const skillLevel = bookingDetails?.level;
-    const serviceOptionName = bookingDetails?.serviceOption?.name;
+    const isSocialPlay =
+      (bookingDetails?.session?.category?.name ?? '').toLowerCase().includes('social') ||
+      (bookingDetails?.session?.title ?? '').toLowerCase().includes('play date') ||
+      (bookingDetails?.session?.title ?? '').toLowerCase().includes('play day');
+    const rawServiceOptionName = bookingDetails?.serviceOption?.name;
+    const serviceOptionName = (!isSocialPlay && rawServiceOptionName && rawServiceOptionName.toLowerCase() !== 'regular')
+      ? rawServiceOptionName
+      : null;
     const totalAmount = bookingDetails?.totalAmount ? Number(bookingDetails.totalAmount).toFixed(2) : (bookingDetails?.unitPrice ? Number(bookingDetails.unitPrice).toFixed(2) : '0.00');
     const notes = bookingDetails?.notes;
     const bookingType = bookingDetails?.session?.type || 'TRAINING';
@@ -76,7 +83,9 @@ export class Smtp2goService {
     // --- Location / Venue block ---
     const location = bookingDetails?.location;
     let locationBlock = '';
+    let minSpendNoticeHtml = '';
     if (location) {
+      const minSpendVal = Number(location.price || 0);
       locationBlock = `
         <tr>
           <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Meeting Location & Venue</td>
@@ -87,11 +96,23 @@ export class Smtp2goService {
         </tr>
         ${location.description ? `<tr><td style="padding: 6px 0; color: #aaa;">Venue:</td><td style="padding: 6px 0; font-weight: bold;">${location.description}</td></tr>` : ''}
         ${location.address ? `<tr><td style="padding: 6px 0; color: #aaa;">Address:</td><td style="padding: 6px 0;">${location.address}</td></tr>` : ''}
+        ${minSpendVal > 0 ? `<tr><td style="padding: 6px 0; color: #aaa;">Minimum Spend:</td><td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">AED ${minSpendVal.toFixed(2)} / person <span style="font-size: 11px; font-weight: normal; color: #aaa;">(payable directly at venue)</span></td></tr>` : ''}
         ${location.parking ? `<tr><td style="padding: 6px 0; color: #aaa;">Parking:</td><td style="padding: 6px 0;">${location.parking}</td></tr>` : ''}
         ${location.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${location.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
       `;
+
+      if (minSpendVal > 0) {
+        minSpendNoticeHtml = `
+          <div style="background-color: #fefce8; border: 1px solid #fef08a; border-left: 4px solid #ca8a04; padding: 14px 16px; border-radius: 8px; margin: 20px 0; font-size: 13px; color: #854d0e;">
+            <strong style="color: #713f12; font-size: 14px;">☕ Venue Minimum Spend Policy:</strong>
+            <p style="margin: 6px 0 0; line-height: 1.5;">
+              Please note that <strong>${location.name}</strong> has a direct minimum spend policy of <strong>AED ${minSpendVal.toFixed(2)} per person</strong> for food & beverage, payable directly to the venue during your session.
+            </p>
+          </div>
+        `;
+      }
     } else if (bookingDetails?.notes && (categoryName.toLowerCase().includes('social') || sessionName.toLowerCase().includes('play date'))) {
-      const match = bookingDetails.notes.match(/Preferred Location:\s*([^|]+)/i);
+      const match = bookingDetails.notes.match(/(?:Preferred Location|Play Date at)\s*:?\s*([^|]+)/i);
       if (match && match[1]) {
         locationBlock = `
           <tr>
@@ -221,6 +242,8 @@ export class Smtp2goService {
             </table>
           </div>
 
+          ${minSpendNoticeHtml}
+
           ${participantsHtml}
 
           ${notesHtml}
@@ -285,7 +308,14 @@ export class Smtp2goService {
     const gameName = bookingDetails?.session?.category?.game?.name || 'Mahjong';
     const categoryName = bookingDetails?.session?.category?.name || 'Session';
     const skillLevel = bookingDetails?.level;
-    const serviceOptionName = bookingDetails?.serviceOption?.name;
+    const isSocialPlay =
+      (bookingDetails?.session?.category?.name ?? '').toLowerCase().includes('social') ||
+      (bookingDetails?.session?.title ?? '').toLowerCase().includes('play date') ||
+      (bookingDetails?.session?.title ?? '').toLowerCase().includes('play day');
+    const rawServiceOptionName = bookingDetails?.serviceOption?.name;
+    const serviceOptionName = (!isSocialPlay && rawServiceOptionName && rawServiceOptionName.toLowerCase() !== 'regular')
+      ? rawServiceOptionName
+      : null;
     const totalAmount = bookingDetails?.totalAmount
       ? Number(bookingDetails.totalAmount).toFixed(2)
       : (bookingDetails?.unitPrice ? Number(bookingDetails.unitPrice).toFixed(2) : '0.00');
