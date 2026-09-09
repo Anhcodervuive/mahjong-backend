@@ -69,7 +69,7 @@ export class AuthService {
       this.configService.get<string>('FE_URL') ||
       process.env.FRONTEND_URL ||
       process.env.FE_URL ||
-      'https://staging.mahjongsuccess.com'
+      'https://mahjongsuccess.com'
     ).replace(/\/+$/, '');
     const resetLink = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
 

@@ -228,7 +228,7 @@ export class Smtp2goService {
           ${loginSection}
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${(this.configService.get<string>('FRONTEND_URL') || 'https://staging.mahjongsuccess.com').replace(/\/+$/, '')}/login" style="display: inline-block; background-color: #D4AF6A; color: #071F1B; text-decoration: none; font-weight: bold; padding: 12px 30px; border-radius: 30px; text-transform: uppercase; font-size: 14px; letter-spacing: 1px;">Log In to Account</a>
+            <a href="${(this.configService.get<string>('FRONTEND_URL') || 'https://mahjongsuccess.com').replace(/\/+$/, '')}/login" style="display: inline-block; background-color: #D4AF6A; color: #071F1B; text-decoration: none; font-weight: bold; padding: 12px 30px; border-radius: 30px; text-transform: uppercase; font-size: 14px; letter-spacing: 1px;">Log In to Account</a>
           </div>
         </div>
         

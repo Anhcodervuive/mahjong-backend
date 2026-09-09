@@ -287,7 +287,7 @@ export class BookingService {
 
       // 2. Generate Payment Link via N-Genius
       const amountInMinorUnits = Math.round(totalAmount * 100);
-      const frontendBase = (process.env.FRONTEND_URL || 'https://staging.mahjongsuccess.com').replace(/\/+$/, '');
+      const frontendBase = (process.env.FRONTEND_URL || 'https://mahjongsuccess.com').replace(/\/+$/, '');
       const redirectUrl = `${frontendBase}/payment/callback?source=${encodeURIComponent(data.source || '/book-session')}`;
       console.log('Sending redirectUrl to N-Genius:', redirectUrl);
 
