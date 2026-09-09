@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJoinCircleDto } from './dto/create-join-circle.dto';
 import { EmailService } from '../email/email.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class JoinCircleService {
@@ -13,11 +14,15 @@ export class JoinCircleService {
   ) {}
 
   async create(createDto: CreateJoinCircleDto) {
+    const cleanEmail = (createDto.email || '').toLowerCase().trim();
+    const fullName = `${createDto.firstName || ''} ${createDto.lastName || ''}`.trim() || 'Player';
+    const phone = (createDto.phone || '').trim() || null;
+
     const request = await this.prisma.joinCircleRequest.create({
       data: {
         firstName: createDto.firstName,
         lastName: createDto.lastName,
-        email: createDto.email,
+        email: cleanEmail,
         phone: createDto.phone,
         gameId: createDto.gameId,
         level: createDto.level,
@@ -41,6 +46,44 @@ export class JoinCircleService {
       }
     });
 
+    // Check if user already exists in system by email
+    let isNewUser = false;
+    let plainPassword = '';
+
+    if (cleanEmail) {
+      try {
+        let user = await this.prisma.user.findUnique({
+          where: { email: cleanEmail },
+        });
+
+        if (!user) {
+          // Generate 8-character random password
+          plainPassword = Math.random().toString(36).slice(-8);
+          const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+          user = await this.prisma.user.create({
+            data: {
+              email: cleanEmail,
+              password: hashedPassword,
+              name: fullName,
+              phone: phone,
+              role: 'USER',
+            },
+          });
+          isNewUser = true;
+          this.logger.log(`Created new user account for join-circle participant: ${cleanEmail}`);
+        } else if (!user.phone && phone) {
+          // Update phone if existing user didn't have one
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { phone },
+          });
+        }
+      } catch (err) {
+        this.logger.error(`Error checking/creating user for join-circle: ${cleanEmail}`, err);
+      }
+    }
+
     // Send customer confirmation & admin notification asynchronously
     Promise.all([
       this.emailService.sendJoinCircleAdminNotification(request).catch(e => 
@@ -48,8 +91,10 @@ export class JoinCircleService {
       ),
       this.emailService.sendJoinCircleCustomerConfirmation(
         request.email,
-        `${request.firstName} ${request.lastName}`.trim(),
-        request
+        fullName,
+        request,
+        isNewUser,
+        plainPassword,
       ).catch(e =>
         this.logger.error(`Failed to send join circle customer confirmation to ${request.email}`, e)
       ),

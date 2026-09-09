@@ -54,6 +54,8 @@ export interface JoinCircleEmailConfig {
   preferencesTitle?: string;
   nextStepsTitle?: string;
   nextStepsText?: string;
+  newUserTitle?: string;
+  newUserIntro?: string;
   footerText?: string;
 }
 
@@ -86,6 +88,8 @@ const DEFAULT_JOIN_CIRCLE_CONFIG: Required<JoinCircleEmailConfig> = {
   preferencesTitle: 'Your Circle Preferences',
   nextStepsTitle: 'What Happens Next',
   nextStepsText: 'Our team will match you with players at a similar skill level and preferred location within 24–48 hours. Once a table of 4 is formed, we will reach out with your confirmed session details.',
+  newUserTitle: 'Your Account Details',
+  newUserIntro: 'An account has been automatically created for you so you can log in, track your requests, and manage your bookings.',
   footerText: 'This is an automated message, please do not reply.',
 };
 
@@ -212,6 +216,8 @@ export class EmailService {
           preferencesTitle: parsed.preferencesTitle || DEFAULT_JOIN_CIRCLE_CONFIG.preferencesTitle,
           nextStepsTitle: parsed.nextStepsTitle || DEFAULT_JOIN_CIRCLE_CONFIG.nextStepsTitle,
           nextStepsText: parsed.nextStepsText || DEFAULT_JOIN_CIRCLE_CONFIG.nextStepsText,
+          newUserTitle: parsed.newUserTitle || DEFAULT_JOIN_CIRCLE_CONFIG.newUserTitle,
+          newUserIntro: parsed.newUserIntro || DEFAULT_JOIN_CIRCLE_CONFIG.newUserIntro,
           footerText: parsed.footerText || DEFAULT_JOIN_CIRCLE_CONFIG.footerText,
         };
       }
@@ -278,7 +284,14 @@ export class EmailService {
     const gameName = bookingDetails?.session?.category?.game?.name || 'Mahjong';
     const categoryName = bookingDetails?.session?.category?.name || 'Session';
     const skillLevel = bookingDetails?.level;
-    const serviceOptionName = bookingDetails?.serviceOption?.name;
+    const isSocialPlay =
+      (bookingDetails?.session?.category?.name ?? '').toLowerCase().includes('social') ||
+      (bookingDetails?.session?.title ?? '').toLowerCase().includes('play date') ||
+      (bookingDetails?.session?.title ?? '').toLowerCase().includes('play day');
+    const rawServiceOptionName = bookingDetails?.serviceOption?.name;
+    const serviceOptionName = (!isSocialPlay && rawServiceOptionName && rawServiceOptionName.toLowerCase() !== 'regular')
+      ? rawServiceOptionName
+      : null;
     const totalAmount = bookingDetails?.totalAmount ? Number(bookingDetails.totalAmount).toFixed(2) : (bookingDetails?.unitPrice ? Number(bookingDetails.unitPrice).toFixed(2) : '0.00');
     const notes = bookingDetails?.notes;
 
@@ -304,8 +317,31 @@ export class EmailService {
 
     // Location / Venue Info
     let venueDetailsHtml = '';
-    if (bookingDetails?.location) {
-      const loc = bookingDetails.location;
+    let minSpendNoticeHtml = '';
+
+    let loc = bookingDetails?.location;
+    if (!loc && bookingDetails?.locationId) {
+      try {
+        loc = await this.prisma.location.findUnique({
+          where: { id: Number(bookingDetails.locationId) },
+        });
+      } catch (e) {
+        this.logger.error('Failed to fetch location by ID for booking confirmation email', e);
+      }
+    }
+    if (!loc && notes) {
+      const match = notes.match(/(?:Preferred Location|Play Date at)\s*:?\s*([^|]+)/i);
+      if (match && match[1]) {
+        const areaName = match[1].trim();
+        try {
+          loc = await this.prisma.location.findFirst({
+            where: { name: { contains: areaName, mode: 'insensitive' }, isDeleted: false },
+          });
+        } catch (e) {}
+      }
+    }
+
+    if (loc) {
       const minSpendVal = Number(loc.price || 0);
       venueDetailsHtml = `
         <tr>
@@ -317,10 +353,21 @@ export class EmailService {
         </tr>
         ${loc.description ? `<tr><td style="padding: 6px 0; color: #aaa;">Venue:</td><td style="padding: 6px 0; font-weight: bold;">${loc.description}</td></tr>` : ''}
         ${loc.address ? `<tr><td style="padding: 6px 0; color: #aaa;">Address:</td><td style="padding: 6px 0;">${loc.address}</td></tr>` : ''}
-        ${minSpendVal > 0 ? `<tr><td style="padding: 6px 0; color: #aaa;">Minimum Spend:</td><td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">AED ${minSpendVal.toFixed(2)} / person <span style="font-size: 11px; font-weight: normal; color: #aaa;">(payable at venue)</span></td></tr>` : ''}
+        ${minSpendVal > 0 ? `<tr><td style="padding: 6px 0; color: #aaa;">Minimum Spend:</td><td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">AED ${minSpendVal.toFixed(2)} / person <span style="font-size: 11px; font-weight: normal; color: #aaa;">(payable directly at venue)</span></td></tr>` : ''}
         ${loc.parking ? `<tr><td style="padding: 6px 0; color: #aaa;">Parking:</td><td style="padding: 6px 0;">${loc.parking}</td></tr>` : ''}
         ${loc.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${loc.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
       `;
+
+      if (minSpendVal > 0) {
+        minSpendNoticeHtml = `
+          <div style="background-color: #fefce8; border: 1px solid #fef08a; border-left: 4px solid #ca8a04; padding: 14px 16px; border-radius: 8px; margin: 20px 0; font-size: 13px; color: #854d0e;">
+            <strong style="color: #713f12; font-size: 14px;">☕ Venue Minimum Spend Policy:</strong>
+            <p style="margin: 6px 0 0; line-height: 1.5;">
+              Please note that <strong>${loc.name}</strong> has a direct minimum spend policy of <strong>AED ${minSpendVal.toFixed(2)} per person</strong> for food & beverage, payable directly to the venue during your session.
+            </p>
+          </div>
+        `;
+      }
     } else {
       const isSocialPlay =
         categoryName.toLowerCase().includes('social') ||
@@ -330,7 +377,7 @@ export class EmailService {
       if (isSocialPlay) {
         let preferredArea = '';
         if (notes) {
-          const match = notes.match(/Preferred Location:\s*([^|]+)/i);
+          const match = notes.match(/(?:Preferred Location|Play Date at)\s*:?\s*([^|]+)/i);
           if (match && match[1]) preferredArea = match[1].trim();
         }
         if (preferredArea) {
@@ -485,6 +532,8 @@ export class EmailService {
             </table>
           </div>
 
+          ${minSpendNoticeHtml}
+
           ${participantsHtml}
 
           ${loginSection}
@@ -527,7 +576,14 @@ export class EmailService {
     const gameName = bookingDetails?.session?.category?.game?.name || 'Mahjong';
     const categoryName = bookingDetails?.session?.category?.name || 'Session';
     const skillLevel = bookingDetails?.level;
-    const serviceOptionName = bookingDetails?.serviceOption?.name;
+    const isSocialPlay =
+      (bookingDetails?.session?.category?.name ?? '').toLowerCase().includes('social') ||
+      (bookingDetails?.session?.title ?? '').toLowerCase().includes('play date') ||
+      (bookingDetails?.session?.title ?? '').toLowerCase().includes('play day');
+    const rawServiceOptionName = bookingDetails?.serviceOption?.name;
+    const serviceOptionName = (!isSocialPlay && rawServiceOptionName && rawServiceOptionName.toLowerCase() !== 'regular')
+      ? rawServiceOptionName
+      : null;
     const totalAmount = bookingDetails?.totalAmount
       ? Number(bookingDetails.totalAmount).toFixed(2)
       : (bookingDetails?.unitPrice ? Number(bookingDetails.unitPrice).toFixed(2) : '0.00');
@@ -754,7 +810,7 @@ export class EmailService {
         game: { name: 'Taiwanese Mahjong' },
         locations: [{ name: 'Dubai Hills' }, { name: 'Barsha' }],
       };
-      await this.sendJoinCircleCustomerConfirmation(email, 'Sample Player', dummyRequest);
+      await this.sendJoinCircleCustomerConfirmation(email, 'Sample Player', dummyRequest, true, 'TempPass123!');
       return;
     }
 
@@ -808,7 +864,13 @@ export class EmailService {
     );
   }
 
-  async sendJoinCircleCustomerConfirmation(email: string, fullName: string, request: any) {
+  async sendJoinCircleCustomerConfirmation(
+    email: string,
+    fullName: string,
+    request: any,
+    isNewUser: boolean = false,
+    plainPassword: string = '',
+  ) {
     const config = await this.getJoinCircleEmailConfig();
     const gameName = request.game?.name || 'Mahjong';
     const level = request.level || 'Beginner';
@@ -827,6 +889,17 @@ export class EmailService {
           ${request.friendName || 'Friend'} ${request.friendEmail ? `(${request.friendEmail})` : ''} ${request.friendPhone ? ` - ${request.friendPhone}` : ''}
         </td>
       </tr>
+    ` : '';
+
+    const loginSectionHtml = isNewUser ? `
+      <!-- Account Details Box -->
+      <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #D4AF6A;">
+        <h3 style="color: #071F1B; margin-top: 0; font-size: 15px; margin-bottom: 10px;">${config.newUserTitle}</h3>
+        <p style="color: #333; margin-bottom: 10px; font-size: 14px;">${config.newUserIntro}</p>
+        <p style="margin: 5px 0; font-size: 14px;"><strong>Username / Email:</strong> ${email}</p>
+        <p style="margin: 5px 0; font-size: 14px;"><strong>Password:</strong> <code style="background: #e5e7eb; padding: 3px 8px; border-radius: 4px; font-family: monospace; font-size: 14px; color: #071F1B; font-weight: bold;">${plainPassword || '••••••••'}</code></p>
+        <p style="color: #666; font-size: 13px; margin-top: 15px; margin-bottom: 0;">Please log in to change your password as soon as possible.</p>
+      </div>
     ` : '';
 
     const htmlContent = `
@@ -873,6 +946,7 @@ export class EmailService {
                 <td style="padding: 6px 0; color: #aaa;">Available Times:</td>
                 <td style="padding: 6px 0; font-weight: bold;">${times}</td>
               </tr>
+              ${friendInfoHtml}
             </table>
           </div>
 
@@ -883,6 +957,8 @@ export class EmailService {
               ${this.formatEmailText(config.nextStepsText)}
             </div>
           </div>
+
+          ${loginSectionHtml}
         </div>
         
         <!-- Footer -->
@@ -1013,7 +1089,7 @@ export class EmailService {
             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
               <a href="${frontendUrl}/sessions" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">Training Sessions</a>
               <a href="${frontendUrl}/guided-games" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">Guided Games</a>
-              <a href="${frontendUrl}/play-date-booking" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">Play Day</a>
+              <a href="${frontendUrl}/play-days-booking" style="display: inline-block; background-color: #071F1B; color: #D4AF6A; text-decoration: none; font-size: 12px; font-weight: bold; padding: 8px 16px; border-radius: 20px; margin: 4px;">Play Day</a>
             </div>
           </div>
         </div>
@@ -1085,7 +1161,14 @@ export class EmailService {
     const gameName = bookingDetails?.session?.category?.game?.name || 'Mahjong';
     const categoryName = bookingDetails?.session?.category?.name || 'Session';
     const skillLevel = bookingDetails?.level;
-    const serviceOptionName = bookingDetails?.serviceOption?.name;
+    const isSocialPlay =
+      (bookingDetails?.session?.category?.name ?? '').toLowerCase().includes('social') ||
+      (bookingDetails?.session?.title ?? '').toLowerCase().includes('play date') ||
+      (bookingDetails?.session?.title ?? '').toLowerCase().includes('play day');
+    const rawServiceOptionName = bookingDetails?.serviceOption?.name;
+    const serviceOptionName = (!isSocialPlay && rawServiceOptionName && rawServiceOptionName.toLowerCase() !== 'regular')
+      ? rawServiceOptionName
+      : null;
     const totalAmount = bookingDetails?.totalAmount ? Number(bookingDetails.totalAmount).toFixed(2) : (bookingDetails?.unitPrice ? Number(bookingDetails.unitPrice).toFixed(2) : '0.00');
     const notes = bookingDetails?.notes;
     const orderReference = bookingDetails?.payment?.transactionId || bookingDetails?.transactionId || '';
@@ -1113,8 +1196,30 @@ export class EmailService {
 
     // Location info
     let venueDetailsHtml = '';
-    if (bookingDetails?.location) {
-      const loc = bookingDetails.location;
+    let loc = bookingDetails?.location;
+    if (!loc && bookingDetails?.locationId) {
+      try {
+        loc = await this.prisma.location.findUnique({
+          where: { id: Number(bookingDetails.locationId) },
+        });
+      } catch (e) {
+        this.logger.error('Failed to fetch location for admin booking email', e);
+      }
+    }
+    if (!loc && notes) {
+      const match = notes.match(/(?:Preferred Location|Play Date at)\s*:?\s*([^|]+)/i);
+      if (match && match[1]) {
+        const areaName = match[1].trim();
+        try {
+          loc = await this.prisma.location.findFirst({
+            where: { name: { contains: areaName, mode: 'insensitive' }, isDeleted: false },
+          });
+        } catch (e) {}
+      }
+    }
+
+    if (loc) {
+      const minSpendVal = Number(loc.price || 0);
       venueDetailsHtml = `
         <tr>
           <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Venue & Location</td>
@@ -1125,6 +1230,9 @@ export class EmailService {
         </tr>
         ${loc.description ? `<tr><td style="padding: 6px 0; color: #aaa;">Venue:</td><td style="padding: 6px 0; font-weight: bold;">${loc.description}</td></tr>` : ''}
         ${loc.address ? `<tr><td style="padding: 6px 0; color: #aaa;">Address:</td><td style="padding: 6px 0;">${loc.address}</td></tr>` : ''}
+        ${minSpendVal > 0 ? `<tr><td style="padding: 6px 0; color: #aaa;">Minimum Spend:</td><td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">AED ${minSpendVal.toFixed(2)} / person <span style="font-size: 11px; font-weight: normal; color: #aaa;">(payable directly at venue)</span></td></tr>` : ''}
+        ${loc.parking ? `<tr><td style="padding: 6px 0; color: #aaa;">Parking:</td><td style="padding: 6px 0;">${loc.parking}</td></tr>` : ''}
+        ${loc.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${loc.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
       `;
     }
 
