@@ -11,10 +11,15 @@ import { seed_points_calculator } from './seeds/points_calculator.seed';
 import { seed_international_points_calculator } from './seeds/international_points_calculator.seed';
 import { seed_guided_games } from './seeds/guided_games.seed';
 import { seedLocations } from './seeds/locations.seed';
+import { seedPlaydaysPage } from './seeds/playdays.seed';
+import { seedTermsAndConditionsPage } from './seeds/terms-and-conditions.seed';
+import { seedFastTrackSplitPages } from './seeds/fast-track-split.seed';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log('🚀 Starting Database Seeding...');
+
   // Admin user
   const adminEmail = 'admin@example.com';
   const existingAdmin = await prisma.user.findUnique({
@@ -52,11 +57,18 @@ async function main() {
 
   // Seed Locations
   await seedLocations(prisma);
+
+  // Seed New CMS Pages (Playdays, Terms & Conditions, Fast-Track Split Pages)
+  await seedPlaydaysPage(prisma);
+  await seedTermsAndConditionsPage(prisma);
+  await seedFastTrackSplitPages(prisma);
+
+  console.log('✅ Seeding Completed Successfully!');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Seeding failed:', e);
     process.exit(1);
   })
   .finally(async () => {
