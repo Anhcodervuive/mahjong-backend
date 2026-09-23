@@ -16,20 +16,17 @@ async function generate() {
     cmsPage: {
       upsert: async ({ where, update, create }: any) => {
         statements.push(`-- ── CmsPage: ${create.slug} ──`);
-        statements.push(`INSERT INTO "CmsPage" ("slug", "title", "metaTitle", "metaDescription", "createdAt", "updatedAt")
+        statements.push(`INSERT INTO "CmsPage" ("slug", "title", "metaTitle", "metaDescription")
 VALUES (
   '${create.slug}',
   '${(create.title || '').replace(/'/g, "''")}',
   '${(create.metaTitle || '').replace(/'/g, "''")}',
-  '${(create.metaDescription || '').replace(/'/g, "''")}',
-  NOW(),
-  NOW()
+  '${(create.metaDescription || '').replace(/'/g, "''")}'
 )
 ON CONFLICT ("slug") DO UPDATE SET
   "title" = EXCLUDED."title",
   "metaTitle" = EXCLUDED."metaTitle",
-  "metaDescription" = EXCLUDED."metaDescription",
-  "updatedAt" = NOW();\n`);
+  "metaDescription" = EXCLUDED."metaDescription";\n`);
         return { id: `(SELECT id FROM "CmsPage" WHERE slug = '${create.slug}')`, slug: create.slug };
       },
       findUnique: async () => null,
@@ -38,21 +35,18 @@ ON CONFLICT ("slug") DO UPDATE SET
       upsert: async ({ where, update, create }: any) => {
         const jsonContent = JSON.stringify(create.content).replace(/'/g, "''");
         statements.push(`-- Section: ${create.key} (${create.name})`);
-        statements.push(`INSERT INTO "CmsSection" ("pageId", "key", "name", "order", "content", "createdAt", "updatedAt")
+        statements.push(`INSERT INTO "CmsSection" ("pageId", "key", "name", "order", "content")
 VALUES (
   ${create.pageId},
   '${create.key}',
   '${(create.name || '').replace(/'/g, "''")}',
   ${create.order || 0},
-  '${jsonContent}'::jsonb,
-  NOW(),
-  NOW()
+  '${jsonContent}'::jsonb
 )
 ON CONFLICT ("pageId", "key") DO UPDATE SET
   "name" = EXCLUDED."name",
   "order" = EXCLUDED."order",
-  "content" = EXCLUDED."content",
-  "updatedAt" = NOW();\n`);
+  "content" = EXCLUDED."content";\n`);
         return {};
       },
       deleteMany: async ({ where }: any) => {
