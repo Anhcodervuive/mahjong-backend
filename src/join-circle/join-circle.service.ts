@@ -155,4 +155,65 @@ export class JoinCircleService {
       where: { id },
     });
   }
+
+  async getOptions() {
+    const options = await this.prisma.circleOption.findMany({
+      where: { isActive: true },
+      orderBy: { order: 'asc' },
+    });
+
+    const days = options.filter(o => o.type === 'DAY').map(o => o.value);
+    const times = options.filter(o => o.type === 'TIME').map(o => o.value);
+
+    const defaultDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const defaultTimes = ["10 am-12 pm", "1 pm-3 pm", "2 pm- 4 pm", "4 pm - 6 pm", "6 pm-8 pm"];
+
+    return {
+      days: days.length > 0 ? days : defaultDays,
+      times: times.length > 0 ? times : defaultTimes,
+      raw: options,
+    };
+  }
+
+  async updateOptions(dto: { days?: string[]; times?: string[] }) {
+    return this.prisma.$transaction(async (tx) => {
+      if (Array.isArray(dto.days)) {
+        await tx.circleOption.deleteMany({ where: { type: 'DAY' } });
+        if (dto.days.length > 0) {
+          await tx.circleOption.createMany({
+            data: dto.days.map((val, idx) => ({
+              type: 'DAY',
+              value: val.trim(),
+              order: idx + 1,
+              isActive: true,
+            })),
+          });
+        }
+      }
+
+      if (Array.isArray(dto.times)) {
+        await tx.circleOption.deleteMany({ where: { type: 'TIME' } });
+        if (dto.times.length > 0) {
+          await tx.circleOption.createMany({
+            data: dto.times.map((val, idx) => ({
+              type: 'TIME',
+              value: val.trim(),
+              order: idx + 1,
+              isActive: true,
+            })),
+          });
+        }
+      }
+
+      const updated = await tx.circleOption.findMany({
+        where: { isActive: true },
+        orderBy: { order: 'asc' },
+      });
+
+      return {
+        days: updated.filter(o => o.type === 'DAY').map(o => o.value),
+        times: updated.filter(o => o.type === 'TIME').map(o => o.value),
+      };
+    });
+  }
 }

@@ -21,6 +21,18 @@ export class JoinCircleController {
     return this.joinCircleService.findAll();
   }
 
+  @Get('options')
+  getOptions() {
+    return this.joinCircleService.getOptions();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Put('options')
+  updateOptions(@Body() dto: { days?: string[]; times?: string[] }) {
+    return this.joinCircleService.updateOptions(dto);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Get(':id')
