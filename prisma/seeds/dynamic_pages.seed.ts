@@ -227,68 +227,114 @@ export async function seedDynamicPages(prisma: PrismaClient) {
   // Ensure page exists
   const page_founder = await prisma.cmsPage.upsert({
     where: { slug: 'founder' },
-    update: { title: 'founder' },
-    create: { slug: 'founder', title: 'founder' },
+    update: { 
+      title: 'Founder',
+      metaTitle: 'Meet the Founder | Mahjong Success',
+      metaDescription: 'Learn about Hashmat Pereira, founder of Mahjong Success, with 25+ years of leadership, corporate training, and community building.'
+    },
+    create: { 
+      slug: 'founder', 
+      title: 'Founder',
+      metaTitle: 'Meet the Founder | Mahjong Success',
+      metaDescription: 'Learn about Hashmat Pereira, founder of Mahjong Success, with 25+ years of leadership, corporate training, and community building.'
+    },
   });
 
-  await prisma.cmsSection.upsert({
-    where: { pageId_key: { pageId: page_founder.id, key: 'founder_content' } },
-    update: { content: {
-  "text_0_meet_the_founder": "Meet the Founder",
-  "text_1_hashmat_pereira": "Hashmat Pereira",
-  "text_2_founder_mahjong_success": "Founder, Mahjong Success",
-  "text_3_a_passionate_advocate_of_lifel": "A passionate advocate of lifelong learning, strategic thinking, and community building through Mahjong.",
-  "text_4_25_years_of_leadership_experie": "25+ Years of Leadership Experience",
-  "text_5_hashmat_pereira": "Hashmat Pereira",
-  "text_6_founder_mahjong_success": "Founder, Mahjong Success",
-  "text_7_hashmat_pereira_is_the_founder": "Hashmat Pereira is the Founder of Mahjong Success and a passionate advocate of lifelong learning, strategic thinking, and community building through Mahjong.",
-  "text_8_with_more_than_25_years_of_lea": "With more than 25 years of leadership experience, Hashmat has built, launched, and managed successful businesses, led large teams, developed products, training programmes, and delivered coaching and mentorship across multiple industries. Her career includes senior leadership roles with leading global and regional organisations including Mastercard, Citibank, Mashreq Bank, and Samba Financial Group.",
-  "text_9_drawing_on_this_extensive_expe": "Drawing on this extensive experience in strategy, training, customer engagement, and business development, Hashmat created Mahjong Success to provide a structured and enjoyable pathway for players to learn, play, and master the board game Mahjong.",
-  "text_10_the_story": "The Story",
-  "text_11_from_corporate_leadership_to_s": "From Corporate Leadership to Social Community Building",
-  "text_12_the_vision_behind_mahjong_succ": "The Vision Behind Mahjong Success",
-  "text_13_hashmat_s_vision_is_to_make_th": "Hashmat's vision is to make the board game Mahjong accessible to people of all ages and backgrounds while building a vibrant community that brings together families, friends, students, professionals, and lifelong learners.",
-  "text_14_through_mahjong_success_she_co": "Through Mahjong Success, she combines her expertise in training, events, strategy, and community building to create a unique learning and social experience that helps players connect, grow, and succeed.",
-  "text_15_her_belief_is_simple_mahjong_i": "Her belief is simple: Mahjong is more than a game. It is a way to connect, learn, think strategically, and build relationships that last a lifetime.",
-  "text_16__through_mahjong_success_we_br": "\"Through Mahjong Success, we bring together families, friends, students, professionals, and lifelong learners through the timeless game of Mahjong.\"",
-  "text_17_learn_play_strategise_speed_su": "Learn. Play. Strategise. Speed. Succeed.",
-  "text_18_hashmat_pereira": "Hashmat Pereira",
-  "text_19__founder_mahjong_success": "— Founder, Mahjong Success",
-  "text_20_learn_with_hashmat": "Learn with Hashmat",
-  "text_21_book_your_first_session_and_ex": "Book your first session and experience the Mahjong Success approach — structured, enjoyable, and designed to give you confidence at the table.",
-  "text_22_book_a_session": "Book a Session"
-} },
-    create: {
-      key: 'founder_content',
-      name: 'Page Content',
-      pageId: page_founder.id,
-      content: {
-  "text_0_meet_the_founder": "Meet the Founder",
-  "text_1_hashmat_pereira": "Hashmat Pereira",
-  "text_2_founder_mahjong_success": "Founder, Mahjong Success",
-  "text_3_a_passionate_advocate_of_lifel": "A passionate advocate of lifelong learning, strategic thinking, and community building through Mahjong.",
-  "text_4_25_years_of_leadership_experie": "25+ Years of Leadership Experience",
-  "text_5_hashmat_pereira": "Hashmat Pereira",
-  "text_6_founder_mahjong_success": "Founder, Mahjong Success",
-  "text_7_hashmat_pereira_is_the_founder": "Hashmat Pereira is the Founder of Mahjong Success and a passionate advocate of lifelong learning, strategic thinking, and community building through Mahjong.",
-  "text_8_with_more_than_25_years_of_lea": "With more than 25 years of leadership experience, Hashmat has built, launched, and managed successful businesses, led large teams, developed products, training programmes, and delivered coaching and mentorship across multiple industries. Her career includes senior leadership roles with leading global and regional organisations including Mastercard, Citibank, Mashreq Bank, and Samba Financial Group.",
-  "text_9_drawing_on_this_extensive_expe": "Drawing on this extensive experience in strategy, training, customer engagement, and business development, Hashmat created Mahjong Success to provide a structured and enjoyable pathway for players to learn, play, and master the board game Mahjong.",
-  "text_10_the_story": "The Story",
-  "text_11_from_corporate_leadership_to_s": "From Corporate Leadership to Social Community Building",
-  "text_12_the_vision_behind_mahjong_succ": "The Vision Behind Mahjong Success",
-  "text_13_hashmat_s_vision_is_to_make_th": "Hashmat's vision is to make the board game Mahjong accessible to people of all ages and backgrounds while building a vibrant community that brings together families, friends, students, professionals, and lifelong learners.",
-  "text_14_through_mahjong_success_she_co": "Through Mahjong Success, she combines her expertise in training, events, strategy, and community building to create a unique learning and social experience that helps players connect, grow, and succeed.",
-  "text_15_her_belief_is_simple_mahjong_i": "Her belief is simple: Mahjong is more than a game. It is a way to connect, learn, think strategically, and build relationships that last a lifetime.",
-  "text_16__through_mahjong_success_we_br": "\"Through Mahjong Success, we bring together families, friends, students, professionals, and lifelong learners through the timeless game of Mahjong.\"",
-  "text_17_learn_play_strategise_speed_su": "Learn. Play. Strategise. Speed. Succeed.",
-  "text_18_hashmat_pereira": "Hashmat Pereira",
-  "text_19__founder_mahjong_success": "— Founder, Mahjong Success",
-  "text_20_learn_with_hashmat": "Learn with Hashmat",
-  "text_21_book_your_first_session_and_ex": "Book your first session and experience the Mahjong Success approach — structured, enjoyable, and designed to give you confidence at the table.",
-  "text_22_book_a_session": "Book a Session"
-}
-    }
+  // Clean old sections if any to prevent duplicates
+  await prisma.cmsSection.deleteMany({
+    where: { pageId: page_founder.id },
   });
+
+  const founderSections = [
+    {
+      key: 'hero',
+      name: '1. Hero & Profile Section',
+      order: 0,
+      content: {
+        badge: "Meet the Founder",
+        title: "Hashmat Pereira",
+        subtitle: "Founder, Mahjong Success",
+        desc: "A passionate advocate of lifelong learning, strategic thinking, and community building through Mahjong.",
+        image: "/hashmat-pereira.jpg",
+        bioBadge: "25+ Years of Leadership Experience",
+        bioTitle: "Hashmat Pereira",
+        bioSubtitle: "Founder, Mahjong Success",
+        bioDesc1: "Hashmat Pereira is the Founder of Mahjong Success and a passionate advocate of lifelong learning, strategic thinking, and community building through Mahjong.",
+        bioDesc2: "With more than 25 years of leadership experience, Hashmat has built, launched, and managed successful businesses, led large teams, developed products, training programmes, and delivered coaching and mentorship across multiple industries. Her career includes senior leadership roles with leading global and regional organisations including Mastercard, Citibank, Mashreq Bank, and Samba Financial Group.",
+        bioDesc3: "Drawing on this extensive experience in strategy, training, customer engagement, and business development, Hashmat created Mahjong Success to provide a structured and enjoyable pathway for players to learn, play, and master the board game Mahjong."
+      }
+    },
+    {
+      key: 'experience',
+      name: '2. Experience & Background',
+      order: 1,
+      content: {
+        EXPERIENCE_CARDS: [
+          { icon: "Briefcase", title: "Senior Leadership", desc: "25+ years across global and regional organisations including Mastercard, Citibank, Mashreq Bank, and Samba Financial Group." },
+          { icon: "CalendarDays", title: "Events & Experiences", desc: "Partner at a leading events management company in the UAE, bringing deep expertise in corporate experiences, community events, and social gatherings." },
+          { icon: "BookOpen", title: "Training & Coaching", desc: "Combines professional teaching methodologies with a structured learning framework to build knowledge, sharpen strategic thinking, foster personal development, and build confidence." },
+          { icon: "Users", title: "Networking Advocate", desc: "Dedicated to community building and bringing people of all ages and backgrounds together to strengthen communication, build meaningful connections, and develop networking skills." },
+          { icon: "Lightbulb", title: "Strategic Thinker", desc: "Passionate about developing strategic and analytical thinking, encouraging individuals to sharpen decision-making, problem-solving, focus and adaptability through engaging learning experiences." },
+          { icon: "Award", title: "Lifelong Learner", desc: "Believes in continuous learning and personal growth, inspiring individuals to stay curious, challenge themselves, develop new skills and build confidence at every stage of life." }
+        ]
+      }
+    },
+    {
+      key: 'vision',
+      name: '3. Vision Behind Mahjong Success',
+      order: 2,
+      content: {
+        title: "The Vision Behind Mahjong Success",
+        desc1: "Hashmat’s vision is to use Mahjong as an engaging learning tool to help individuals and corporates develop valuable personal, social and professional skills.",
+        desc2: "Through Mahjong, she aims to strengthen strategic thinking, decision-making, adaptability, focus and problem-solving, while exercising the brain, encouraging personal development and building confidence.",
+        desc3: "Ultimately, her vision is to make Mahjong accessible to people of all ages and backgrounds, while building a vibrant and inclusive community.",
+        VISION_PILLARS: [
+          { label: "Mahjong Success Training", badge: "Learn", desc: "Structured training across different versions of Mahjong, including American, Western and Taiwanese Mahjong, taking players from beginner foundations through to advanced hands, strategy and scoring.", link: "/book-session", linkText: "Booking Now" },
+          { label: "Tile Talk by Mahjong Success", badge: "YouTube", desc: "Watch. Learn. Play. Succeed. Quick Mahjong training, tips and strategies through short videos on YouTube.", link: "https://www.youtube.com/@TileTalkbyMahjongSuccess", linkText: "@TileTalkbyMahjongSuccess", youtubeChannel: "@TileTalkbyMahjongSuccess" },
+          { label: "The Thinking Table", badge: "Corporate", desc: "The Corporate Training Program by Mahjong Success. The Thinking Table takes Mahjong beyond the game and into the workplace, using its strategic elements to create an engaging and interactive team experience.", link: "/thinking-table", linkText: "Learn more about The Thinking Table" },
+          { label: "The Mahjong Success Circle", badge: "Social", desc: "A vibrant social and networking community that brings together like-minded people through a shared love of Mahjong. Connect, build new relationships, and enjoy social events, matches, tournaments and offsites.", link: "/join-circle", linkText: "Join the Circle" }
+        ],
+        quoteText: "\"Through Mahjong Success, we bring together families, friends, professionals, and lifelong learners through the timeless game of Mahjong.\"",
+        quoteBtnText: "Learn. Play. Strategise. Speed. Succeed.",
+        quoteBtnLink: "/book-session",
+        author: "Hashmat Pereira",
+        authorTitle: "— Founder, Mahjong Success"
+      }
+    },
+    {
+      key: 'gallery',
+      name: '4. Moments Gallery (3 Images)',
+      order: 3,
+      content: {
+        subtitle: "MOMENTS BEHIND MAHJONG SUCCESS",
+        title: "A Glimpse Into the Journey",
+        images: [
+          { src: "/moments/moment-1.png", alt: "Hashmat Pereira arranging Mahjong table setup" },
+          { src: "/moments/moment-4.png", alt: "Hashmat Pereira playing with Mahjong tiles" },
+          { src: "/moments/moment-5.png", alt: "Hashmat Pereira with Mahjong tiles at table" }
+        ]
+      }
+    },
+    {
+      key: 'cta',
+      name: '5. Call to Action',
+      order: 4,
+      content: {
+        title: "Learn with Hashmat",
+        desc: "Book your first session and experience the Mahjong Success approach — structured, enjoyable, and designed to give you confidence at the table.",
+        btnText: "Book a Session",
+        btnLink: "/book-session"
+      }
+    }
+  ];
+
+  for (const s of founderSections) {
+    await prisma.cmsSection.upsert({
+      where: { pageId_key: { pageId: page_founder.id, key: s.key } },
+      update: { name: s.name, order: s.order, content: s.content },
+      create: { pageId: page_founder.id, key: s.key, name: s.name, order: s.order, content: s.content }
+    });
+  }
 
   console.log('Seeding goulash...');
   
