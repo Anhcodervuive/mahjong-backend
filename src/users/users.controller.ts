@@ -9,10 +9,26 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @UseGuards(JwtAuthGuard)
+  @Get('preferences')
+  async getPreferences(@Request() req: any) {
+    const userId = req.user.id || req.user.userId || req.user.sub;
+    return this.usersService.getUserPreferences(Number(userId));
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch('profile')
   async updateProfile(
     @Request() req: any,
-    @Body() body: { name?: string; phone?: string },
+    @Body()
+    body: {
+      name?: string;
+      phone?: string;
+      preferredGame?: string;
+      level?: string;
+      ageGroup?: string;
+      preferredLocations?: string[];
+      preferredTimings?: string[];
+    },
   ) {
     const userId = req.user.id || req.user.userId || req.user.sub;
     return this.usersService.updateProfile(Number(userId), body);

@@ -37,6 +37,11 @@ model User {
   role                 Role      @default(USER)
   resetPasswordToken   String?
   resetPasswordExpires DateTime?
+  preferredGame        String?
+  level                String?
+  ageGroup             String?
+  preferredLocations   String[]  @default([])
+  preferredTimings     String[]  @default([])
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   isDeleted            Boolean   @default(false)

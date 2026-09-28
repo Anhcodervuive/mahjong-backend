@@ -53,13 +53,40 @@ export class UsersService {
     });
   }
 
-  async updateProfile(userId: number, data: { name?: string; phone?: string }) {
+  async updateProfile(userId: number, data: {
+    name?: string;
+    phone?: string;
+    preferredGame?: string;
+    level?: string;
+    ageGroup?: string;
+    preferredLocations?: string[];
+    preferredTimings?: string[];
+  }) {
     const updateData: any = {};
     if (data.name !== undefined && data.name.trim()) {
       updateData.name = data.name.trim();
     }
     if (data.phone !== undefined) {
       updateData.phone = data.phone.trim();
+    }
+    if (data.preferredGame !== undefined) {
+      updateData.preferredGame = data.preferredGame ? data.preferredGame.trim() : null;
+    }
+    if (data.level !== undefined) {
+      updateData.level = data.level ? data.level.trim() : null;
+    }
+    if (data.ageGroup !== undefined) {
+      updateData.ageGroup = data.ageGroup ? data.ageGroup.trim() : null;
+    }
+    if (data.preferredLocations !== undefined) {
+      updateData.preferredLocations = Array.isArray(data.preferredLocations)
+        ? data.preferredLocations.map((l: string) => l.trim()).filter(Boolean)
+        : [];
+    }
+    if (data.preferredTimings !== undefined) {
+      updateData.preferredTimings = Array.isArray(data.preferredTimings)
+        ? data.preferredTimings.map((t: string) => t.trim()).filter(Boolean)
+        : [];
     }
     return this.prisma.user.update({
       where: { id: userId },
@@ -70,8 +97,130 @@ export class UsersService {
         name: true,
         phone: true,
         role: true,
+        preferredGame: true,
+        level: true,
+        ageGroup: true,
+        preferredLocations: true,
+        preferredTimings: true,
       },
     });
+  }
+
+  async getUserPreferences(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      return null;
+    }
+
+    const email = user.email.toLowerCase().trim();
+
+    // 1. Fetch Latest Booking (Priority 1)
+    const latestBooking = await this.prisma.booking.findFirst({
+      where: {
+        contactEmail: { equals: email, mode: 'insensitive' },
+        isDeleted: false,
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        session: {
+          include: {
+            category: {
+              include: {
+                game: true,
+              },
+            },
+          },
+        },
+        location: true,
+        participants: {
+          include: {
+            ageGroup: true,
+          },
+        },
+      },
+    });
+
+    // 2. Fetch Latest JoinCircleRequest (Priority 2)
+    const latestCircle = await this.prisma.joinCircleRequest.findFirst({
+      where: {
+        email: { equals: email, mode: 'insensitive' },
+        isDeleted: false,
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        game: true,
+        locations: true,
+      },
+    });
+
+    // Extract booking data
+    const bookingGame = latestBooking?.session?.category?.game?.name || null;
+    const bookingLevel = latestBooking?.level || null;
+    const bookingAgeGroup = latestBooking?.participants?.[0]?.ageGroup?.name || null;
+    const bookingLocation = latestBooking?.location?.name || null;
+    const bookingTiming =
+      latestBooking?.startTime && latestBooking?.endTime
+        ? `${latestBooking.startTime} - ${latestBooking.endTime}`
+        : null;
+
+    // Extract circle data
+    const circleGame = latestCircle?.game?.name || null;
+    const circleLevel = latestCircle?.level || null;
+    const circleAgeGroup = latestCircle?.ageGroup || null;
+    const circleLocations = latestCircle?.locations?.map((l: any) => l.name) || [];
+    const circleTimings = [
+      ...(latestCircle?.days || []),
+      ...(latestCircle?.times || []),
+    ];
+
+    // Priority Merge Rule (as requested by Srinath & Mashihul):
+    // 1. Game: Booking > Circle > User.preferredGame
+    const preferredGame = bookingGame || circleGame || user.preferredGame || null;
+
+    // 2. Level: Booking > Circle > User.level
+    const level = bookingLevel || circleLevel || user.level || null;
+
+    // 3. Age Group: Booking > Circle > User.ageGroup
+    const ageGroup = bookingAgeGroup || circleAgeGroup || user.ageGroup || null;
+
+    // 4. Preferred Locations:
+    const locationsSet = new Set<string>();
+    if (bookingLocation) locationsSet.add(bookingLocation);
+    if (circleLocations && circleLocations.length > 0) {
+      circleLocations.forEach((loc: string) => locationsSet.add(loc));
+    }
+    if (user.preferredLocations && user.preferredLocations.length > 0) {
+      user.preferredLocations.forEach((loc: string) => locationsSet.add(loc));
+    }
+    const preferredLocations = Array.from(locationsSet);
+
+    // 5. Preferred Timings:
+    const timingsSet = new Set<string>();
+    if (circleTimings && circleTimings.length > 0) {
+      circleTimings.forEach((t: string) => timingsSet.add(t));
+    }
+    if (bookingTiming) timingsSet.add(bookingTiming);
+    if (user.preferredTimings && user.preferredTimings.length > 0) {
+      user.preferredTimings.forEach((t: string) => timingsSet.add(t));
+    }
+    const preferredTimings = Array.from(timingsSet);
+
+    return {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      preferredGame,
+      level,
+      ageGroup,
+      preferredLocations,
+      preferredTimings,
+      source: latestBooking ? 'BOOKING' : latestCircle ? 'JOIN_CIRCLE' : 'PROFILE',
+      latestBookingId: latestBooking?.id || null,
+      latestCircleRequestId: latestCircle?.id || null,
+    };
   }
 
   async getAllUsers(limit?: number, offset?: number, search?: string, type?: string) {
@@ -84,6 +233,11 @@ export class UsersService {
         email: true,
         phone: true,
         role: true,
+        preferredGame: true,
+        level: true,
+        ageGroup: true,
+        preferredLocations: true,
+        preferredTimings: true,
         createdAt: true,
       },
     });
