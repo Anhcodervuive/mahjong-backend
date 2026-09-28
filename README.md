@@ -102,3 +102,19 @@ When you run `npx prisma db seed`, the following happens:
 - The `uploads/` folder is included in version control so that default banner images are retained and displayed properly out-of-the-box.
 
 You can log in to the admin panel at `http://localhost:5174/admin` using the default credentials to access the CMS Hub and live preview features.
+
+---
+
+## 🗄️ Database Backup & Safety Rules (Production Deployment)
+
+Before executing any migrations or seeds on Production, always backup the database first:
+
+```bash
+# Backup Production DB to DATA/YYYY-MM-DD/
+npm run db:backup:prod
+
+# Backup Development DB
+npm run db:backup:dev
+```
+
+See the full backup and rollback rules in [DATA/README.md](file:///d:/Freelancer/mahjong-backend/DATA/README.md) and SQL patches log in [database_patches/README.md](file:///d:/Freelancer/mahjong-backend/database_patches/README.md).

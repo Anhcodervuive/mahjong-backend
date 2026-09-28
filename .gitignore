@@ -39,6 +39,7 @@ Thumbs.db
 !.vscode/launch.json
 !.vscode/extensions.json
 
-/DATA
+/DATA/*
+!/DATA/README.md
 
 /uploads_backup
