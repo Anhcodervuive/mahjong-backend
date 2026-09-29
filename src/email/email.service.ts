@@ -392,18 +392,7 @@ export class EmailService {
           `;
         }
       } else {
-        const venueSetting = await this.prisma.setting.findUnique({ where: { key: 'VENUE_DETAILS' } });
-        if (venueSetting?.value) {
-          venueDetailsHtml = `
-            <tr>
-              <td colspan="2" style="padding: 14px 0 6px; color: #D4AF6A; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(212, 175, 106, 0.2);">📍 Venue Address</td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 0; color: #aaa; width: 130px;">Address:</td>
-              <td style="padding: 6px 0; font-weight: bold;">${venueSetting.value}</td>
-            </tr>
-          `;
-        }
+        venueDetailsHtml = '';
       }
     }
 

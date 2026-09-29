@@ -439,7 +439,7 @@ export class BookingService {
         venueDisplay = cafeName || areaName || 'Preferred Venue';
         locationDisplay = areaName || '';
       } else {
-        venueDisplay = payment.booking?.location?.address || payment.booking?.location?.name || venueSetting?.value || 'Venue address not set';
+        venueDisplay = payment.booking?.location?.address || payment.booking?.location?.name || '';
         locationDisplay = payment.booking?.location?.name || '';
       }
 
