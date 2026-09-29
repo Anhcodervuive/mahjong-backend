@@ -355,6 +355,7 @@ export class EmailService {
         ${loc.address ? `<tr><td style="padding: 6px 0; color: #aaa;">Address:</td><td style="padding: 6px 0;">${loc.address}</td></tr>` : ''}
         ${minSpendVal > 0 ? `<tr><td style="padding: 6px 0; color: #aaa;">Minimum Spend:</td><td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">AED ${minSpendVal.toFixed(2)} / person <span style="font-size: 11px; font-weight: normal; color: #aaa;">(payable directly at venue)</span></td></tr>` : ''}
         ${loc.parking ? `<tr><td style="padding: 6px 0; color: #aaa;">Parking:</td><td style="padding: 6px 0;">${loc.parking}</td></tr>` : ''}
+        ${loc.note ? `<tr><td style="padding: 6px 0; color: #aaa;">Note:</td><td style="padding: 6px 0; font-weight: 500; color: #D4AF6A;">${loc.note}</td></tr>` : ''}
         ${loc.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${loc.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
       `;
 
@@ -1221,6 +1222,7 @@ export class EmailService {
         ${loc.address ? `<tr><td style="padding: 6px 0; color: #aaa;">Address:</td><td style="padding: 6px 0;">${loc.address}</td></tr>` : ''}
         ${minSpendVal > 0 ? `<tr><td style="padding: 6px 0; color: #aaa;">Minimum Spend:</td><td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">AED ${minSpendVal.toFixed(2)} / person <span style="font-size: 11px; font-weight: normal; color: #aaa;">(payable directly at venue)</span></td></tr>` : ''}
         ${loc.parking ? `<tr><td style="padding: 6px 0; color: #aaa;">Parking:</td><td style="padding: 6px 0;">${loc.parking}</td></tr>` : ''}
+        ${loc.note ? `<tr><td style="padding: 6px 0; color: #aaa;">Note:</td><td style="padding: 6px 0; font-weight: 500; color: #D4AF6A;">${loc.note}</td></tr>` : ''}
         ${loc.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${loc.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
       `;
     }

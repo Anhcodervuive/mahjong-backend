@@ -27,6 +27,10 @@ export class CreateLocationDto {
   @IsOptional()
   parking?: string;
 
+  @IsString()
+  @IsOptional()
+  note?: string;
+
   @IsOptional()
   schedules?: {
     dayOfWeek: number;

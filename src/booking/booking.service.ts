@@ -457,6 +457,7 @@ export class BookingService {
         endTime: payment.booking?.endTime,
         venue: venueDisplay,
         locationName: locationDisplay,
+        locationNote: payment.booking?.location?.note || '',
         status: statusData.state,
       };
     } catch (error) {

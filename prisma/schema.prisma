@@ -178,6 +178,7 @@ model Location {
   mapUrl      String?
   price       Decimal @default(0) @db.Decimal(10, 2)
   parking     String? @map("daysAndTime") // Keep db column as daysAndTime to prevent data loss
+  note        String?
   order       Int     @default(0)
   isDeleted   Boolean @default(false)
 

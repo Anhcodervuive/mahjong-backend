@@ -98,6 +98,7 @@ export class Smtp2goService {
         ${location.address ? `<tr><td style="padding: 6px 0; color: #aaa;">Address:</td><td style="padding: 6px 0;">${location.address}</td></tr>` : ''}
         ${minSpendVal > 0 ? `<tr><td style="padding: 6px 0; color: #aaa;">Minimum Spend:</td><td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">AED ${minSpendVal.toFixed(2)} / person <span style="font-size: 11px; font-weight: normal; color: #aaa;">(payable directly at venue)</span></td></tr>` : ''}
         ${location.parking ? `<tr><td style="padding: 6px 0; color: #aaa;">Parking:</td><td style="padding: 6px 0;">${location.parking}</td></tr>` : ''}
+        ${location.note ? `<tr><td style="padding: 6px 0; color: #aaa;">Note:</td><td style="padding: 6px 0; font-weight: 500; color: #D4AF6A;">${location.note}</td></tr>` : ''}
         ${location.mapUrl ? `<tr><td style="padding: 6px 0; color: #aaa;">Map:</td><td style="padding: 6px 0;"><a href="${location.mapUrl}" target="_blank" style="color: #D4AF6A; text-decoration: underline;">View on Google Maps</a></td></tr>` : ''}
       `;
 
