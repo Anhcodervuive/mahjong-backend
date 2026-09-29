@@ -20,7 +20,7 @@ async function bootstrap() {
     }
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, X-Requested-With, Origin, Cache-Control, Pragma, Access-Control-Request-Method, Access-Control-Request-Headers');
 
     // Handle preflight OPTIONS directly
     if (req.method === 'OPTIONS') {
@@ -36,7 +36,7 @@ async function bootstrap() {
     },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers',
+    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin, Cache-Control, Pragma, Access-Control-Request-Method, Access-Control-Request-Headers',
   });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
