@@ -61,7 +61,8 @@ export class PaymentService {
       },
       merchantAttributes: {
         redirectUrl: redirectUrl,
-        skipConfirmationPage: true,
+        cancelUrl: redirectUrl,
+        skipConfirmationPage: false,
       },
       billingAddress: billingDetails,
     };
