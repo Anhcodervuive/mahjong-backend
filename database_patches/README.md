@@ -14,6 +14,7 @@ Thư mục này lưu trữ toàn bộ các file SQL patch đã được áp dụ
 | **`07_add_user_preferences_columns.sql`** | Thêm các cột sở thích người chơi (`preferredGame`, `level`, `ageGroup`, `preferredLocations`, `preferredTimings`) vào bảng `User`. | ✅ Đã chạy | ⏳ Chạy khi lên Prod |
 | **`08_update_fast_track_cta_links.sql`** | Cập nhật đường link nút Hero & Footer CTA của toàn bộ các trang Fast-Track dẫn vào gói Bundle đầu tiên (Launchpad) thay vì Foundation. | ⏳ Chạy Staging | ⏳ Chạy Prod |
 | **`09_update_seo_metadata_and_titles.sql`** | Cập nhật toàn bộ Meta Title, Meta Description, OG tags chuẩn SEO Audit Dubai và dọn sạch thẻ meta keywords lỗi thời trên CmsPage. | ⏳ Chạy Staging | ⏳ Chạy Prod |
+| **`10_make_join_circle_chargeable.sql`** | Thêm các cột thanh toán và phí cố định cho JoinCircleRequest, cho phép liên kết Payment với Circle Request và seed thiết lập `circle_flat_fee`. | ⏳ Chạy Staging | ⏳ Chạy Prod |
 
 ---
 

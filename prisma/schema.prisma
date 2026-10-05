@@ -316,16 +316,18 @@ enum PaymentStatus {
 }
 
 model Payment {
-  id            Int           @id @default(autoincrement())
-  bookingId     Int           @unique
-  provider      String
-  transactionId String?       @unique
-  paymentUrl    String?
-  amount        Decimal       @db.Decimal(10, 2)
-  currency      String        @default("AED")
-  status        PaymentStatus @default(PENDING)
+  id                  Int                @id @default(autoincrement())
+  bookingId           Int?               @unique
+  joinCircleRequestId Int?               @unique
+  provider            String
+  transactionId       String?            @unique
+  paymentUrl          String?
+  amount              Decimal            @db.Decimal(10, 2)
+  currency            String             @default("AED")
+  status              PaymentStatus      @default(PENDING)
 
-  booking Booking @relation(fields: [bookingId], references: [id])
+  booking           Booking?           @relation(fields: [bookingId], references: [id])
+  joinCircleRequest JoinCircleRequest? @relation(fields: [joinCircleRequestId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -358,10 +360,16 @@ model JoinCircleRequest {
   friendEmail String?
   friendPhone String?
 
+  fee            Decimal?         @default(0) @db.Decimal(10, 2)
+  paymentStatus  PaymentStatus    @default(PENDING)
+  orderReference String?
+  paymentUrl     String?
+
   status JoinCircleStatus @default(PENDING)
 
-  game     Game      @relation(fields: [gameId], references: [id])
+  game      Game       @relation(fields: [gameId], references: [id])
   locations Location[] @relation("JoinCircleRequestToLocation")
+  payment   Payment?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

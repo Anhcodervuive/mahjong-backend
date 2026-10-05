@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Patch } from '@nestjs/common';
 import { JoinCircleService } from './join-circle.service';
 import { CreateJoinCircleDto } from './dto/create-join-circle.dto';
+import { UpdateCircleOptionsDto } from './dto/update-circle-options.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -29,7 +30,7 @@ export class JoinCircleController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Put('options')
-  updateOptions(@Body() dto: { days?: string[]; times?: string[] }) {
+  updateOptions(@Body() dto: UpdateCircleOptionsDto) {
     return this.joinCircleService.updateOptions(dto);
   }
 

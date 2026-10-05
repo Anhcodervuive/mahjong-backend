@@ -872,6 +872,13 @@ export class EmailService {
       ? request.locations.map((l: any) => l.name).join(', ')
       : 'Flexible';
 
+    const feeInfoHtml = request.fee && Number(request.fee) > 0 ? `
+      <tr>
+        <td style="padding: 6px 0; color: #aaa;">Registration Fee:</td>
+        <td style="padding: 6px 0; font-weight: bold; color: #D4AF6A;">AED ${Number(request.fee).toFixed(2)} (Paid)</td>
+      </tr>
+    ` : '';
+
     const friendInfoHtml = request.friendEmail || request.friendName ? `
       <tr>
         <td style="padding: 6px 0; color: #aaa;">Friend Joining:</td>
@@ -936,6 +943,7 @@ export class EmailService {
                 <td style="padding: 6px 0; color: #aaa;">Available Times:</td>
                 <td style="padding: 6px 0; font-weight: bold;">${times}</td>
               </tr>
+              ${feeInfoHtml}
               ${friendInfoHtml}
             </table>
           </div>
@@ -995,6 +1003,7 @@ export class EmailService {
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Days:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${Array.isArray(request.days) ? request.days.join(', ') : request.days}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Times:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${Array.isArray(request.times) ? request.times.join(', ') : request.times}</td></tr>
           <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Group Size:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${request.groupSize}</td></tr>
+          ${request.fee && Number(request.fee) > 0 ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Fee Paid:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">AED ${Number(request.fee).toFixed(2)} (Paid)</td></tr>` : ''}
         </table>
         ${request.friendName || request.friendEmail ? `<p><strong>Friend:</strong> ${request.friendName || ''} (${request.friendEmail || ''} - ${formatPhoneNumber(request.friendPhone) || ''})</p>` : ''}
         ${request.message ? `<p><strong>Message:</strong><br>${request.message}</p>` : ''}

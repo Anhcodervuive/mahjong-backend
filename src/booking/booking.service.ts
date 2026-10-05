@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PaymentService } from '../payment/payment.service';
 import { EmailService } from '../email/email.service';
 import { Smtp2goService } from '../smtp2go/smtp2go.service';
+import { JoinCircleService } from '../join-circle/join-circle.service';
 import * as bcrypt from 'bcrypt';
 import dayjs from 'dayjs';
 
@@ -63,6 +64,7 @@ export class BookingService {
     private readonly paymentService: PaymentService,
     private readonly emailService: EmailService,
     private readonly smtp2goService: Smtp2goService,
+    private readonly joinCircleService: JoinCircleService,
   ) {}
 
   async createBooking(data: any): Promise<{ paymentUrl: string }> {
@@ -345,6 +347,12 @@ export class BookingService {
               payment: true,
             },
           },
+          joinCircleRequest: {
+            include: {
+              game: true,
+              locations: true,
+            },
+          },
         },
       });
 
@@ -356,28 +364,68 @@ export class BookingService {
       // N-Genius states: 'AUTHORISED', 'CAPTURED', etc.
       const isSuccess = statusData._embedded?.payment?.[0]?.state === 'CAPTURED' || statusData._embedded?.payment?.[0]?.state === 'AUTHORISED';
 
+      // ── Handle Join Circle Payment ──
+      if (payment.joinCircleRequestId) {
+        if (isSuccess && payment.status !== 'SUCCESS') {
+          await this.prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: 'SUCCESS' },
+          });
+          await this.prisma.joinCircleRequest.update({
+            where: { id: payment.joinCircleRequestId },
+            data: { paymentStatus: 'SUCCESS' },
+          });
+          // Process user creation and send emails asynchronously
+          this.joinCircleService.handlePaymentSuccess(payment.joinCircleRequest).catch(e =>
+            this.logger.error('Failed to handle join circle payment success', e)
+          );
+        } else if (!isSuccess && payment.status !== 'FAILED') {
+          await this.prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: 'FAILED' },
+          });
+          await this.prisma.joinCircleRequest.update({
+            where: { id: payment.joinCircleRequestId },
+            data: { paymentStatus: 'FAILED' },
+          });
+        }
+
+        return {
+          success: isSuccess,
+          isCircle: true,
+          circleId: payment.joinCircleRequestId,
+          orderReference: payment.transactionId,
+          fee: payment.amount ? Number(payment.amount) : 0,
+          status: statusData.state,
+        };
+      }
+
       if (isSuccess && payment.status !== 'SUCCESS') {
         await this.prisma.payment.update({
           where: { id: payment.id },
           data: { status: 'SUCCESS' },
         });
-        await this.prisma.booking.update({
-          where: { id: payment.bookingId },
-          data: { status: 'SUCCESS' },
-        });
-        // Asynchronously process user creation and send emails
-        this.processBookingUsers(payment.booking).catch(e => 
-          this.logger.error('Background user processing failed', e)
-        );
+        if (payment.bookingId) {
+          await this.prisma.booking.update({
+            where: { id: payment.bookingId },
+            data: { status: 'SUCCESS' },
+          });
+          // Asynchronously process user creation and send emails
+          this.processBookingUsers(payment.booking).catch(e => 
+            this.logger.error('Background user processing failed', e)
+          );
+        }
       } else if (!isSuccess && payment.status !== 'FAILED') {
         await this.prisma.payment.update({
           where: { id: payment.id },
           data: { status: 'FAILED' },
         });
-        await this.prisma.booking.update({
-          where: { id: payment.bookingId },
-          data: { status: 'FAILED' },
-        });
+        if (payment.bookingId) {
+          await this.prisma.booking.update({
+            where: { id: payment.bookingId },
+            data: { status: 'FAILED' },
+          });
+        }
 
         // Send payment failure email to the user
         const customerEmail =
