@@ -50,10 +50,11 @@ export class PaymentService {
     amountInMinorUnits: number,
     redirectUrl: string,
     billingDetails?: any,
+    emailAddress?: string,
   ): Promise<{ orderReference: string; paymentLink: string }> {
     const accessToken = await this.getAccessToken();
 
-    const orderPayload = {
+    const orderPayload: any = {
       action: 'SALE',
       amount: {
         currencyCode: this.currency,
@@ -66,6 +67,10 @@ export class PaymentService {
       },
       billingAddress: billingDetails,
     };
+
+    if (emailAddress && emailAddress.trim()) {
+      orderPayload.emailAddress = emailAddress.trim().toLowerCase();
+    }
     
     console.log('Sending order payload to N-Genius:', JSON.stringify(orderPayload, null, 2));
 

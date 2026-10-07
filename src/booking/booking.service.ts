@@ -67,6 +67,11 @@ export class BookingService {
 
   async createBooking(data: any): Promise<{ paymentUrl: string }> {
     try {
+      if (!data.contactEmail || typeof data.contactEmail !== 'string' || !data.contactEmail.trim()) {
+        throw new BadRequestException('Contact email is required for booking and payment.');
+      }
+      const cleanContactEmail = data.contactEmail.trim().toLowerCase();
+
       const sessionId = typeof data.sessionId === 'number' ? data.sessionId : parseInt(String(data.sessionId || '').replace(/\D/g, ''), 10);
       let serviceOptionId = data.serviceOptionId ? (typeof data.serviceOptionId === 'number' ? data.serviceOptionId : parseInt(String(data.serviceOptionId || '').replace(/\D/g, ''), 10)) : null;
       const locationId = data.locationId ? (typeof data.locationId === 'number' ? data.locationId : parseInt(String(data.locationId || '').replace(/\D/g, ''), 10)) : null;
@@ -259,7 +264,7 @@ export class BookingService {
           startTime: data.startTime,
           endTime: data.endTime,
           contactName: data.contactName,
-          contactEmail: data.contactEmail,
+          contactEmail: cleanContactEmail,
           contactPhone: formattedContactPhone,
           unitPrice,
           quantity: data.participants.length,
@@ -292,7 +297,8 @@ export class BookingService {
         {
           firstName: data.contactName.split(' ')[0],
           lastName: data.contactName.split(' ').slice(1).join(' ') || '.',
-        }
+        },
+        cleanContactEmail,
       );
 
       // 3. Create Payment Record linked to Booking
