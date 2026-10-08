@@ -54,6 +54,8 @@ export class PaymentService {
   ): Promise<{ orderReference: string; paymentLink: string }> {
     const accessToken = await this.getAccessToken();
 
+    const cleanEmail = emailAddress && emailAddress.trim() ? emailAddress.trim().toLowerCase() : null;
+
     const orderPayload: any = {
       action: 'SALE',
       amount: {
@@ -65,11 +67,16 @@ export class PaymentService {
         cancelUrl: redirectUrl,
         skipConfirmationPage: false,
       },
-      billingAddress: billingDetails,
+      billingAddress: billingDetails
+        ? {
+            ...billingDetails,
+            ...(cleanEmail ? { emailAddress: cleanEmail } : {}),
+          }
+        : undefined,
     };
 
-    if (emailAddress && emailAddress.trim()) {
-      orderPayload.emailAddress = emailAddress.trim().toLowerCase();
+    if (cleanEmail) {
+      orderPayload.emailAddress = cleanEmail;
     }
     
     console.log('Sending order payload to N-Genius:', JSON.stringify(orderPayload, null, 2));
