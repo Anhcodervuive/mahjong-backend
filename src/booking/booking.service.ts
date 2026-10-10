@@ -107,43 +107,7 @@ export class BookingService {
       // Expecting data.bookingDate to be in 'YYYY-MM-DD' format
       const bookingDate = new Date(`${data.bookingDate}T00:00:00.000Z`);
       
-      // Validate that booking satisfies the minimum 2 working days advance notice
-      const nowInDubai = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
-      const today = dayjs(nowInDubai).startOf('day');
-
-      let workingDaysCounted = 0;
-      let checkDate = today.add(1, 'day');
-      const upcomingOverrides = await this.prisma.dateOverride.findMany({
-        where: {
-          date: {
-            gte: today.toDate(),
-            lte: today.add(14, 'day').toDate(),
-          },
-        },
-      });
-      while (workingDaysCounted < 2) {
-        const dateStr = checkDate.format('YYYY-MM-DD');
-        const dow = checkDate.day();
-        const isWeekend = dow === 0 || dow === 6; // Sunday (0) or Saturday (6)
-        const override = upcomingOverrides.find(
-          (o) => dayjs(o.date).format('YYYY-MM-DD') === dateStr
-        );
-        const isClosed = override ? override.isClosed : isWeekend;
-
-        if (!isClosed) {
-          workingDaysCounted++;
-        }
-        if (workingDaysCounted < 2) {
-          checkDate = checkDate.add(1, 'day');
-        }
-      }
-      const earliestBookable = checkDate.add(1, 'day');
-
-      if (dayjs(data.bookingDate).isBefore(earliestBookable, 'day')) {
-        throw new BadRequestException('Bookings require at least 2 working days advance notice.');
-      }
-
-      // --- SMART CHECK: Overlap & Capacity ---
+      // Time helper
       const timeToMins = (t: string) => {
         if (!t) return 0;
         const isPM = /pm/i.test(t);
@@ -156,6 +120,25 @@ export class BookingService {
         if (isAM && hours === 12) hours = 0;
         return hours * 60 + minutes;
       };
+
+      // Validate that booking date is not in the past (Dubai timezone)
+      const nowInDubai = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
+      const todayInDubai = dayjs(nowInDubai).startOf('day');
+
+      if (dayjs(data.bookingDate).isBefore(todayInDubai, 'day')) {
+        throw new BadRequestException('Cannot book a date in the past.');
+      }
+
+      // If booking is for today, ensure requested start time has not already passed
+      if (dayjs(data.bookingDate).isSame(todayInDubai, 'day') && data.startTime) {
+        const currentDubaiMins = dayjs(nowInDubai).hour() * 60 + dayjs(nowInDubai).minute();
+        const reqStartMins = timeToMins(data.startTime);
+        if (reqStartMins <= currentDubaiMins) {
+          throw new BadRequestException('Cannot book a time slot that has already started or passed today.');
+        }
+      }
+
+      // --- SMART CHECK: Overlap & Capacity ---
       const reqStartMins = timeToMins(data.startTime);
       const reqEndMins = timeToMins(data.endTime);
 

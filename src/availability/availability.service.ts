@@ -8,39 +8,7 @@ export class AvailabilityService {
 
   async getEarliestBookableDate(): Promise<dayjs.Dayjs> {
     const nowInDubai = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
-    const today = dayjs(nowInDubai).startOf('day');
-
-    // Fetch upcoming date overrides for the next 14 days
-    const upcomingOverrides = await this.prisma.dateOverride.findMany({
-      where: {
-        date: {
-          gte: today.toDate(),
-          lte: today.add(14, 'day').toDate(),
-        },
-      },
-    });
-
-    let workingDaysCounted = 0;
-    let checkDate = today.add(1, 'day'); // Start checking from tomorrow
-
-    while (workingDaysCounted < 2) {
-      const dateStr = checkDate.format('YYYY-MM-DD');
-      const dow = checkDate.day();
-      const isWeekend = dow === 0 || dow === 6; // Sunday (0) or Saturday (6)
-      const override = upcomingOverrides.find(
-        (o) => dayjs(o.date).format('YYYY-MM-DD') === dateStr
-      );
-      const isClosed = override ? override.isClosed : isWeekend;
-
-      if (!isClosed) {
-        workingDaysCounted++;
-      }
-      if (workingDaysCounted < 2) {
-        checkDate = checkDate.add(1, 'day');
-      }
-    }
-
-    return checkDate.add(1, 'day');
+    return dayjs(nowInDubai).startOf('day');
   }
 
   async getAvailabilityForMonth(year: number, month: number, sessionId?: number) {
@@ -170,6 +138,13 @@ export class AvailabilityService {
           const exactSlotBookings = overlappingBookings.filter(b => b.startTime === slotStart && b.endTime === slotEnd);
           bookedCount = exactSlotBookings.reduce((sum, b) => sum + (b.quantity || 1), 0); 
           remaining = Math.max(0, shift.capacity - bookedCount);
+        }
+
+        // If slot is for today, check if it has already started or passed
+        const nowDubai = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
+        const currentDubaiMins = dayjs(nowDubai).hour() * 60 + dayjs(nowDubai).minute();
+        if (currentDate.isSame(dayjs(nowDubai).startOf('day'), 'day') && tsStartMins <= currentDubaiMins) {
+          remaining = 0;
         }
 
         totalCapacity += shift.capacity;
@@ -355,6 +330,13 @@ export class AvailabilityService {
             usedCapacity += bookedCount;
           }
 
+          // If slot is for today, check if it has already started or passed
+          const nowDubai = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
+          const currentDubaiMins = dayjs(nowDubai).hour() * 60 + dayjs(nowDubai).minute();
+          if (currentDate.isSame(dayjs(nowDubai).startOf('day'), 'day') && shiftStartMins <= currentDubaiMins) {
+            remaining = 0;
+          }
+
           const sh = parseInt(shift.startTimeStr.split(':')[0], 10);
           const eh = parseInt(shift.endTimeStr.split(':')[0], 10);
           const startLabel = `${sh % 12 === 0 ? 12 : sh % 12}:00 ${sh >= 12 ? 'PM' : 'AM'}`;
@@ -484,7 +466,14 @@ export class AvailabilityService {
 
         const sessionBookings = overlappingBookings.filter(b => b.sessionId === sessionId && b.startTime === ts.startTime && b.endTime === ts.endTime);
         const bookedCount = sessionBookings.reduce((sum, b) => sum + (b.quantity || 1), 0);
-        const remaining = Math.max(0, capacity - bookedCount);
+        let remaining = Math.max(0, capacity - bookedCount);
+
+        // If slot is for today, check if it has already started or passed
+        const nowDubai = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' }));
+        const currentDubaiMins = dayjs(nowDubai).hour() * 60 + dayjs(nowDubai).minute();
+        if (currentDate.isSame(dayjs(nowDubai).startOf('day'), 'day') && tsStartMins <= currentDubaiMins) {
+          remaining = 0;
+        }
 
         slots.push({
           id: `${dateStr}-${ts.startTime}-${ts.endTime}`,
