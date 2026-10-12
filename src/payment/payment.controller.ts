@@ -110,6 +110,13 @@ export class PaymentController {
       return { isValid: true };
     }
 
+    // 3. Method C: Check any custom header key provided by merchant portal
+    for (const [, val] of Object.entries(headers)) {
+      if (typeof val === 'string' && val.trim() === configuredSecret) {
+        return { isValid: true };
+      }
+    }
+
     return { isValid: false, reason: 'INVALID_OR_MISSING_HEADER_SECRET' };
   }
 

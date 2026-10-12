@@ -104,9 +104,18 @@ export class BookingController {
         }
       }
 
+      let customHeaderMatch = false;
+      for (const [, val] of Object.entries(headers)) {
+        if (typeof val === 'string' && val.trim() === configuredSecret) {
+          customHeaderMatch = true;
+          break;
+        }
+      }
+
       const isValid =
         headerToken === configuredSecret ||
         authHeader === configuredSecret ||
+        customHeaderMatch ||
         sigMatch;
 
       if (!isValid) {
