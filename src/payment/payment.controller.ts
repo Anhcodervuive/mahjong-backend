@@ -21,6 +21,9 @@ import * as crypto from 'crypto';
 export class PaymentController {
   private readonly logger = new Logger(PaymentController.name);
 
+  // In-memory deduplication cache to prevent replay attacks (dedupeKey -> timestamp)
+  private readonly processedEvents = new Map<string, number>();
+
   constructor(
     @Inject(forwardRef(() => BookingService))
     private readonly bookingService: BookingService,
@@ -198,6 +201,28 @@ export class PaymentController {
       `Processing N-Genius webhook event '${eventName}' [payloadState='${payloadState}'] for orderReference: ${orderReference}`,
     );
 
+    // Replay attack prevention: Deduplication check
+    const eventId = payload?.eventId || payload?.id;
+    const dedupeKey = eventId
+      ? `event_${eventId}`
+      : `order_${orderReference}_${eventName}`;
+
+    if (this.processedEvents.has(dedupeKey)) {
+      const processedAt = this.processedEvents.get(dedupeKey);
+      this.logger.warn(
+        `Ignored replayed/duplicate webhook event: dedupeKey=${dedupeKey}, originallyReceivedAt=${new Date(
+          processedAt!,
+        ).toISOString()}`,
+      );
+      return {
+        success: true,
+        replayed: true,
+        orderReference,
+        eventName,
+        message: 'Webhook event was already processed. Ignored for replay attack protection.',
+      };
+    }
+
     // If secret verification is enabled and payload contains the state, we can trust it directly!
     let directState: string | undefined;
     if (process.env.PAYMENT_WEBHOOK_SECRET) {
@@ -225,6 +250,16 @@ export class PaymentController {
     try {
       // Authoritatively verify order: if directState is supplied, updates DB immediately without external roundtrip!
       const result = await this.bookingService.verifyPayment(orderReference, directState);
+
+      // Mark as processed in deduplication cache to block replay attacks
+      this.processedEvents.set(dedupeKey, Date.now());
+      const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
+      for (const [key, timestamp] of this.processedEvents.entries()) {
+        if (timestamp < twoHoursAgo) {
+          this.processedEvents.delete(key);
+        }
+      }
+
       this.logger.log(
         `Successfully processed webhook for orderReference ${orderReference} (directState=${directState || 'verified-via-api'}): result=${JSON.stringify(
           result,
