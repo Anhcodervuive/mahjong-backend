@@ -75,7 +75,7 @@ export class BookingController {
     @Query() query: any,
     @Headers() headers: any,
   ) {
-    const configuredSecret = process.env.PAYMENT_WEBHOOK_SECRET?.trim();
+    const configuredSecret = process.env.PAYMENT_WEBHOOK_SECRET?.replace(/^["']|["']$/g, '').trim();
     if (configuredSecret) {
       const headerToken = (
         headers['x-webhook-secret'] ||

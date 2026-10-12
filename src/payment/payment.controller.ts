@@ -55,7 +55,7 @@ export class PaymentController {
     headers: any,
     rawBody: any,
   ): { isValid: boolean; reason?: string } {
-    const configuredSecret = process.env.PAYMENT_WEBHOOK_SECRET?.trim();
+    const configuredSecret = process.env.PAYMENT_WEBHOOK_SECRET?.replace(/^["']|["']$/g, '').trim();
 
     // If no secret configured yet, allow requests to proceed to N-Genius server-to-server check
     if (!configuredSecret) {
