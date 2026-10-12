@@ -77,7 +77,6 @@ export class BookingController {
   ) {
     const configuredSecret = process.env.PAYMENT_WEBHOOK_SECRET?.trim();
     if (configuredSecret) {
-      const queryToken = (query?.token || query?.secret)?.trim();
       const headerToken = (
         headers['x-webhook-secret'] ||
         headers['x-api-key'] ||
@@ -106,13 +105,12 @@ export class BookingController {
       }
 
       const isValid =
-        queryToken === configuredSecret ||
         headerToken === configuredSecret ||
         authHeader === configuredSecret ||
         sigMatch;
 
       if (!isValid) {
-        throw new UnauthorizedException('Invalid or missing webhook secret / signature');
+        throw new UnauthorizedException('Invalid or missing webhook secret / signature in request headers');
       }
     }
 

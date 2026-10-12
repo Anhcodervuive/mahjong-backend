@@ -44,14 +44,12 @@ export class PaymentController {
 
   /**
    * Verify authenticity of incoming webhook using PAYMENT_WEBHOOK_SECRET
-   * Supports:
-   * 1. Query parameter: ?token=... or ?secret=...
-   * 2. Header token: x-webhook-secret, x-api-key, or Authorization: Bearer <secret>
-   * 3. HMAC-SHA256 signature header: x-signature or x-ngenius-signature
+   * Strictly supports industry-standard HTTP Header Authentication:
+   * 1. HMAC-SHA256 signature header: x-signature or x-ngenius-signature
+   * 2. Secret / Bearer header: Authorization: Bearer <secret> or x-webhook-secret / x-api-key
    */
   private verifyWebhookAuth(
     headers: any,
-    query: any,
     rawBody: any,
   ): { isValid: boolean; reason?: string } {
     const configuredSecret = process.env.PAYMENT_WEBHOOK_SECRET?.trim();
@@ -61,35 +59,7 @@ export class PaymentController {
       return { isValid: true, reason: 'NO_SECRET_CONFIGURED' };
     }
 
-    // 1. Check query parameter: ?token=... or ?secret=...
-    const queryToken = (query?.token || query?.secret)?.trim();
-    if (queryToken && queryToken === configuredSecret) {
-      return { isValid: true };
-    }
-
-    // 2. Check header tokens
-    const headerToken = (
-      headers['x-webhook-secret'] ||
-      headers['x-api-key'] ||
-      headers['webhook-secret']
-    )?.trim();
-    if (headerToken && headerToken === configuredSecret) {
-      return { isValid: true };
-    }
-
-    // 3. Check Authorization header: Bearer <secret> or Basic <secret>
-    const authHeader = headers['authorization']?.trim();
-    if (authHeader) {
-      const token = authHeader
-        .replace(/^Bearer\s+/i, '')
-        .replace(/^Basic\s+/i, '')
-        .trim();
-      if (token === configuredSecret) {
-        return { isValid: true };
-      }
-    }
-
-    // 4. Check HMAC Signature in headers
+    // 1. Method A: Check HMAC-SHA256 Signature in HTTP headers (Most secure)
     const signature = (
       headers['x-signature'] ||
       headers['x-ngenius-signature'] ||
@@ -119,7 +89,28 @@ export class PaymentController {
       }
     }
 
-    return { isValid: false, reason: 'INVALID_OR_MISSING_SECRET' };
+    // 2. Method B: Check HTTP Authorization / Secret Headers
+    const authHeader = headers['authorization']?.trim();
+    if (authHeader) {
+      const token = authHeader
+        .replace(/^Bearer\s+/i, '')
+        .replace(/^Basic\s+/i, '')
+        .trim();
+      if (token === configuredSecret) {
+        return { isValid: true };
+      }
+    }
+
+    const headerToken = (
+      headers['x-webhook-secret'] ||
+      headers['x-api-key'] ||
+      headers['webhook-secret']
+    )?.trim();
+    if (headerToken && headerToken === configuredSecret) {
+      return { isValid: true };
+    }
+
+    return { isValid: false, reason: 'INVALID_OR_MISSING_HEADER_SECRET' };
   }
 
   /**
@@ -133,11 +124,11 @@ export class PaymentController {
     @Headers() headers: any,
     @Req() req: any,
   ) {
-    // 1. Verify Request Authenticity via PAYMENT_WEBHOOK_SECRET
-    const authCheck = this.verifyWebhookAuth(headers, query, req.body || body);
+    // 1. Verify Request Authenticity via HTTP Headers (HMAC-SHA256 signature or Bearer/Secret header)
+    const authCheck = this.verifyWebhookAuth(headers, req.body || body);
     if (!authCheck.isValid) {
       this.logger.warn(`Blocked unauthorized webhook request: ${authCheck.reason}`);
-      throw new UnauthorizedException('Invalid or missing webhook secret / signature');
+      throw new UnauthorizedException('Invalid or missing webhook secret / signature in request headers');
     }
 
     // Safeguard parsing if body came as string or raw buffer
