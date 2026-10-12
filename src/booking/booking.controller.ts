@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, UseGuards, Req, HttpCode, HttpStatus, Headers } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -55,5 +55,66 @@ export class BookingController {
       return { success: false, error: 'No order reference provided' };
     }
     return this.bookingService.verifyPayment(orderReference);
+  }
+
+  @Get('webhook')
+  async webhookHealthCheck() {
+    return {
+      status: 'active',
+      service: 'mahjong-booking-webhook',
+      message: 'Booking Webhook alias endpoint is active and listening.',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post('webhook')
+  @HttpCode(HttpStatus.OK)
+  async handleBookingWebhook(
+    @Body() body: any,
+    @Query() query: any,
+    @Headers() headers: any,
+  ) {
+    let payload = body;
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload);
+      } catch {
+        // Keep as string
+      }
+    }
+
+    const orderReference =
+      payload?.order?.reference ||
+      payload?.details?.order?.reference ||
+      payload?.details?.reference ||
+      payload?.orderReference ||
+      payload?.reference ||
+      payload?._embedded?.payment?.[0]?.orderReference ||
+      query?.ref ||
+      query?.orderReference ||
+      query?.reference;
+
+    if (!orderReference) {
+      return {
+        success: true,
+        received: true,
+        message: 'Webhook received but no order reference found in payload',
+      };
+    }
+
+    try {
+      const result = await this.bookingService.verifyPayment(orderReference);
+      return {
+        success: true,
+        orderReference,
+        result,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        orderReference,
+        error: error?.message || 'Failed to process webhook',
+      };
+    }
   }
 }

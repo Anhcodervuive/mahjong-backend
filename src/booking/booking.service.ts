@@ -350,8 +350,9 @@ export class BookingService {
       // Check with N-Genius
       const statusData = await this.paymentService.getOrderStatus(orderReference);
       
-      // N-Genius states: 'AUTHORISED', 'CAPTURED', etc.
-      const isSuccess = statusData._embedded?.payment?.[0]?.state === 'CAPTURED' || statusData._embedded?.payment?.[0]?.state === 'AUTHORISED';
+      // N-Genius states: 'AUTHORISED', 'CAPTURED', 'PURCHASED', etc.
+      const rawState = statusData?._embedded?.payment?.[0]?.state || statusData?.state;
+      const isSuccess = rawState === 'CAPTURED' || rawState === 'AUTHORISED' || rawState === 'PURCHASED' || rawState === 'SUCCESS';
 
       // ── Handle Join Circle Payment ──
       if (payment.joinCircleRequestId) {

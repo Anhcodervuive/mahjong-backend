@@ -5,10 +5,15 @@ import { AppModule } from './app.module';
 import { PrismaClientExceptionFilter } from './prisma/prisma-client-exception.filter';
 import { AppLoggerService } from './common/app-logger.service';
 import { Request, Response, NextFunction } from 'express';
+import * as express from 'express';
 
 async function bootstrap() {
   const logger = new AppLoggerService('Bootstrap');
   const app = await NestFactory.create(AppModule, { logger });
+
+  // Support vendor MIME types (such as N-Genius application/vnd.ni-payment.v2+json)
+  app.use(express.json({ type: ['application/json', 'application/*+json', '*/*+json'] }));
+  app.use(express.urlencoded({ extended: true }));
 
   // Custom CORS middleware to guarantee all headers and OPTIONS 204 preflights succeed
   app.use((req: Request, res: Response, next: NextFunction) => {
