@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, Query, UseGuards, Req, HttpCode, HttpStatus, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, UseGuards, Req, HttpCode, HttpStatus, Headers, UnauthorizedException } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { BookingService } from './booking.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -74,6 +75,47 @@ export class BookingController {
     @Query() query: any,
     @Headers() headers: any,
   ) {
+    const configuredSecret = process.env.PAYMENT_WEBHOOK_SECRET?.trim();
+    if (configuredSecret) {
+      const queryToken = (query?.token || query?.secret)?.trim();
+      const headerToken = (
+        headers['x-webhook-secret'] ||
+        headers['x-api-key'] ||
+        headers['webhook-secret']
+      )?.trim();
+      const authHeader = headers['authorization']
+        ?.replace(/^Bearer\s+/i, '')
+        ?.replace(/^Basic\s+/i, '')
+        ?.trim();
+      const sig = (
+        headers['x-signature'] ||
+        headers['x-ngenius-signature'] ||
+        headers['signature']
+      )?.trim();
+
+      let sigMatch = false;
+      if (sig) {
+        try {
+          const bodyStr = typeof body === 'string' ? body : JSON.stringify(body);
+          const hex = crypto.createHmac('sha256', configuredSecret).update(bodyStr).digest('hex');
+          const b64 = crypto.createHmac('sha256', configuredSecret).update(bodyStr).digest('base64');
+          sigMatch = sig.toLowerCase() === hex.toLowerCase() || sig === b64;
+        } catch {
+          // ignore error
+        }
+      }
+
+      const isValid =
+        queryToken === configuredSecret ||
+        headerToken === configuredSecret ||
+        authHeader === configuredSecret ||
+        sigMatch;
+
+      if (!isValid) {
+        throw new UnauthorizedException('Invalid or missing webhook secret / signature');
+      }
+    }
+
     let payload = body;
     if (typeof payload === 'string') {
       try {
@@ -102,8 +144,38 @@ export class BookingController {
       };
     }
 
+    let directState: string | undefined;
+    if (configuredSecret) {
+      const eventName = payload?.eventName || payload?.type || payload?.event;
+      const state =
+        payload?.order?.state ||
+        payload?.details?.order?.state ||
+        payload?.state ||
+        payload?._embedded?.payment?.[0]?.state;
+
+      const isSuccess =
+        eventName === 'CAPTURED' ||
+        eventName === 'AUTHORISED' ||
+        eventName === 'PURCHASED' ||
+        state === 'CAPTURED' ||
+        state === 'AUTHORISED' ||
+        state === 'PURCHASED' ||
+        state === 'SUCCESS';
+
+      const isFailed =
+        eventName === 'FAILED' ||
+        eventName === 'DECLINED' ||
+        eventName === 'CANCELLED' ||
+        state === 'FAILED' ||
+        state === 'DECLINED' ||
+        state === 'CANCELLED';
+
+      if (isSuccess) directState = 'CAPTURED';
+      else if (isFailed) directState = 'FAILED';
+    }
+
     try {
-      const result = await this.bookingService.verifyPayment(orderReference);
+      const result = await this.bookingService.verifyPayment(orderReference, directState);
       return {
         success: true,
         orderReference,

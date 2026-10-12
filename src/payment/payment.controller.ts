@@ -11,9 +11,11 @@ import {
   Logger,
   Inject,
   forwardRef,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { BookingService } from '../booking/booking.service';
 import { PaymentService } from './payment.service';
+import * as crypto from 'crypto';
 
 @Controller('payment')
 export class PaymentController {
@@ -30,12 +32,94 @@ export class PaymentController {
    */
   @Get('webhook')
   async webhookHealthCheck() {
+    const isSecretConfigured = !!process.env.PAYMENT_WEBHOOK_SECRET;
     return {
       status: 'active',
       service: 'mahjong-payment-webhook',
+      secretProtection: isSecretConfigured ? 'ENABLED' : 'FALLBACK_API_VERIFICATION',
       message: 'N-Genius Payment Webhook endpoint is active and listening.',
       timestamp: new Date().toISOString(),
     };
+  }
+
+  /**
+   * Verify authenticity of incoming webhook using PAYMENT_WEBHOOK_SECRET
+   * Supports:
+   * 1. Query parameter: ?token=... or ?secret=...
+   * 2. Header token: x-webhook-secret, x-api-key, or Authorization: Bearer <secret>
+   * 3. HMAC-SHA256 signature header: x-signature or x-ngenius-signature
+   */
+  private verifyWebhookAuth(
+    headers: any,
+    query: any,
+    rawBody: any,
+  ): { isValid: boolean; reason?: string } {
+    const configuredSecret = process.env.PAYMENT_WEBHOOK_SECRET?.trim();
+
+    // If no secret configured yet, allow requests to proceed to N-Genius server-to-server check
+    if (!configuredSecret) {
+      return { isValid: true, reason: 'NO_SECRET_CONFIGURED' };
+    }
+
+    // 1. Check query parameter: ?token=... or ?secret=...
+    const queryToken = (query?.token || query?.secret)?.trim();
+    if (queryToken && queryToken === configuredSecret) {
+      return { isValid: true };
+    }
+
+    // 2. Check header tokens
+    const headerToken = (
+      headers['x-webhook-secret'] ||
+      headers['x-api-key'] ||
+      headers['webhook-secret']
+    )?.trim();
+    if (headerToken && headerToken === configuredSecret) {
+      return { isValid: true };
+    }
+
+    // 3. Check Authorization header: Bearer <secret> or Basic <secret>
+    const authHeader = headers['authorization']?.trim();
+    if (authHeader) {
+      const token = authHeader
+        .replace(/^Bearer\s+/i, '')
+        .replace(/^Basic\s+/i, '')
+        .trim();
+      if (token === configuredSecret) {
+        return { isValid: true };
+      }
+    }
+
+    // 4. Check HMAC Signature in headers
+    const signature = (
+      headers['x-signature'] ||
+      headers['x-ngenius-signature'] ||
+      headers['signature']
+    )?.trim();
+
+    if (signature) {
+      try {
+        const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody);
+        const computedHex = crypto
+          .createHmac('sha256', configuredSecret)
+          .update(bodyStr)
+          .digest('hex');
+        const computedBase64 = crypto
+          .createHmac('sha256', configuredSecret)
+          .update(bodyStr)
+          .digest('base64');
+
+        if (
+          signature.toLowerCase() === computedHex.toLowerCase() ||
+          signature === computedBase64
+        ) {
+          return { isValid: true };
+        }
+      } catch (err: any) {
+        this.logger.error(`Error computing HMAC signature: ${err?.message}`);
+      }
+    }
+
+    return { isValid: false, reason: 'INVALID_OR_MISSING_SECRET' };
   }
 
   /**
@@ -49,6 +133,13 @@ export class PaymentController {
     @Headers() headers: any,
     @Req() req: any,
   ) {
+    // 1. Verify Request Authenticity via PAYMENT_WEBHOOK_SECRET
+    const authCheck = this.verifyWebhookAuth(headers, query, req.body || body);
+    if (!authCheck.isValid) {
+      this.logger.warn(`Blocked unauthorized webhook request: ${authCheck.reason}`);
+      throw new UnauthorizedException('Invalid or missing webhook secret / signature');
+    }
+
     // Safeguard parsing if body came as string or raw buffer
     let payload = body;
     if (typeof payload === 'string') {
@@ -86,6 +177,12 @@ export class PaymentController {
       payload?.event ||
       'UNKNOWN';
 
+    const payloadState =
+      payload?.order?.state ||
+      payload?.details?.order?.state ||
+      payload?.state ||
+      payload?._embedded?.payment?.[0]?.state;
+
     if (!orderReference) {
       this.logger.warn(
         `N-Genius webhook received without valid order reference: payload=${JSON.stringify(
@@ -100,14 +197,38 @@ export class PaymentController {
     }
 
     this.logger.log(
-      `Processing N-Genius webhook event '${eventName}' for orderReference: ${orderReference}`,
+      `Processing N-Genius webhook event '${eventName}' [payloadState='${payloadState}'] for orderReference: ${orderReference}`,
     );
 
+    // If secret verification is enabled and payload contains the state, we can trust it directly!
+    let directState: string | undefined;
+    if (process.env.PAYMENT_WEBHOOK_SECRET) {
+      const isSuccess =
+        eventName === 'CAPTURED' ||
+        eventName === 'AUTHORISED' ||
+        eventName === 'PURCHASED' ||
+        payloadState === 'CAPTURED' ||
+        payloadState === 'AUTHORISED' ||
+        payloadState === 'PURCHASED' ||
+        payloadState === 'SUCCESS';
+
+      const isFailed =
+        eventName === 'FAILED' ||
+        eventName === 'DECLINED' ||
+        eventName === 'CANCELLED' ||
+        payloadState === 'FAILED' ||
+        payloadState === 'DECLINED' ||
+        payloadState === 'CANCELLED';
+
+      if (isSuccess) directState = 'CAPTURED';
+      else if (isFailed) directState = 'FAILED';
+    }
+
     try {
-      // Authoritatively verify order with N-Genius API and update database idempotently
-      const result = await this.bookingService.verifyPayment(orderReference);
+      // Authoritatively verify order: if directState is supplied, updates DB immediately without external roundtrip!
+      const result = await this.bookingService.verifyPayment(orderReference, directState);
       this.logger.log(
-        `Successfully processed webhook for orderReference ${orderReference}: result=${JSON.stringify(
+        `Successfully processed webhook for orderReference ${orderReference} (directState=${directState || 'verified-via-api'}): result=${JSON.stringify(
           result,
         )}`,
       );
@@ -122,7 +243,6 @@ export class PaymentController {
         `Error processing webhook for orderReference ${orderReference}: ${error?.message}`,
         error?.stack,
       );
-      // Return 200 with error details to prevent endless retry storms from gateway if reference is unknown
       return {
         success: false,
         orderReference,

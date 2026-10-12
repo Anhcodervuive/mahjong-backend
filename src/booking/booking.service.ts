@@ -310,7 +310,7 @@ export class BookingService {
     }
   }
 
-  async verifyPayment(orderReference: string): Promise<any> {
+  async verifyPayment(orderReference: string, directState?: string): Promise<any> {
     try {
       const payment = await this.prisma.payment.findUnique({
         where: { transactionId: orderReference },
@@ -347,11 +347,16 @@ export class BookingService {
 
       if (!payment) throw new NotFoundException('Payment record not found');
 
-      // Check with N-Genius
-      const statusData = await this.paymentService.getOrderStatus(orderReference);
+      let rawState = directState;
+      let statusData: any = null;
+
+      // If directState is NOT provided, verify with N-Genius directly
+      if (!rawState) {
+        statusData = await this.paymentService.getOrderStatus(orderReference);
+        rawState = statusData?._embedded?.payment?.[0]?.state || statusData?.state;
+      }
       
       // N-Genius states: 'AUTHORISED', 'CAPTURED', 'PURCHASED', etc.
-      const rawState = statusData?._embedded?.payment?.[0]?.state || statusData?.state;
       const isSuccess = rawState === 'CAPTURED' || rawState === 'AUTHORISED' || rawState === 'PURCHASED' || rawState === 'SUCCESS';
 
       // ── Handle Join Circle Payment ──
@@ -386,7 +391,7 @@ export class BookingService {
           circleId: payment.joinCircleRequestId,
           orderReference: payment.transactionId,
           fee: payment.amount ? Number(payment.amount) : 0,
-          status: statusData.state,
+          status: statusData?.state || rawState,
         };
       }
 
