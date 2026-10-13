@@ -1,11 +1,7 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { PaymentController } from './payment.controller';
-import { BookingModule } from '../booking/booking.module';
 
 @Module({
-  imports: [forwardRef(() => BookingModule)],
-  controllers: [PaymentController],
   providers: [PaymentService],
   exports: [PaymentService],
 })

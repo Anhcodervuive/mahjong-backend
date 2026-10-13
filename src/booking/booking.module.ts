@@ -1,6 +1,7 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { BookingController } from './booking.controller';
+import { PaymentController } from '../payment/payment.controller';
 
 import { PrismaModule } from '../prisma/prisma.module';
 import { PaymentModule } from '../payment/payment.module';
@@ -11,14 +12,13 @@ import { JoinCircleModule } from '../join-circle/join-circle.module';
 @Module({
   imports: [
     PrismaModule,
-    forwardRef(() => PaymentModule),
+    PaymentModule,
     EmailModule,
     Smtp2goModule,
     JoinCircleModule,
   ],
   providers: [BookingService],
-  controllers: [BookingController],
+  controllers: [BookingController, PaymentController],
   exports: [BookingService],
 })
 export class BookingModule {}
-

@@ -9,8 +9,6 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
-  Inject,
-  forwardRef,
   UnauthorizedException,
 } from '@nestjs/common';
 import { BookingService } from '../booking/booking.service';
@@ -25,7 +23,6 @@ export class PaymentController {
   private readonly processedEvents = new Map<string, number>();
 
   constructor(
-    @Inject(forwardRef(() => BookingService))
     private readonly bookingService: BookingService,
     private readonly paymentService: PaymentService,
   ) {}
